@@ -1,0 +1,14 @@
+{
+    "name": "fabrica/plasticos",
+    "description": "Sistema de gestión de fábrica de plásticos",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "require": {
+        "vlucas/phpdotenv": "^5.5",
+        "dompdf/dompdf": "^3.1"
+    }
+}
