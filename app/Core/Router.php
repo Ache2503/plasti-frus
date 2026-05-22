@@ -3,7 +3,9 @@ namespace App\Core;
 
 class Router
 {
-    private $routes = [];
+    private array $routes = [];
+    private array $middleware = [];
+    private array $groupMiddleware = [];
 
     public function get(string $uri, string $action): void
     {
@@ -15,7 +17,47 @@ class Router
         $this->routes['POST'][$uri] = $action;
     }
 
+    public function put(string $uri, string $action): void
+    {
+        $this->routes['PUT'][$uri] = $action;
+    }
+
+    public function delete(string $uri, string $action): void
+    {
+        $this->routes['DELETE'][$uri] = $action;
+    }
+
+    public function addMiddleware(string $middleware): void
+    {
+        $this->middleware[] = $middleware;
+    }
+
+    public function group(array $attributes, callable $callback): void
+    {
+        $previousGroupMiddleware = $this->groupMiddleware;
+
+        if (isset($attributes['middleware'])) {
+            $middlewares = is_array($attributes['middleware'])
+                ? $attributes['middleware']
+                : [$attributes['middleware']];
+            $this->groupMiddleware = array_merge($this->groupMiddleware, $middlewares);
+        }
+
+        $callback($this);
+
+        $this->groupMiddleware = $previousGroupMiddleware;
+    }
+
     public function dispatch(string $uri, string $method): void
+    {
+        try {
+            $this->handleDispatch($uri, $method);
+        } catch (\Throwable $e) {
+            \App\Exceptions\Handler::handle($e);
+        }
+    }
+
+    private function handleDispatch(string $uri, string $method): void
     {
         $uri = parse_url($uri, PHP_URL_PATH);
         $uri = rtrim($uri, '/') ?: '/';
@@ -25,6 +67,10 @@ class Router
         }
 
         $method = strtoupper($method);
+
+        if ($method === 'POST' && isset($_POST['_method'])) {
+            $method = strtoupper($_POST['_method']);
+        }
 
         if (!isset($this->routes[$method])) {
             $this->notFound();
@@ -53,15 +99,35 @@ class Router
         }
 
         [$controller, $method] = $parts;
-        $controllerClass = "App\\Controllers\\{$controller}";
 
-        if (!class_exists($controllerClass)) {
-            throw new \Exception("Controlador no encontrado: {$controllerClass}");
+        $namespaces = [
+            "App\\Http\\Controllers\\{$controller}",
+            "App\\Controllers\\{$controller}",
+        ];
+
+        $instance = null;
+        $controllerClass = null;
+
+        foreach ($namespaces as $ns) {
+            if (class_exists($ns)) {
+                $controllerClass = $ns;
+                $instance = new $ns();
+                break;
+            }
         }
 
-        $instance = new $controllerClass();
+        if ($instance === null) {
+            throw new \Exception("Controlador no encontrado: {$controller}");
+        }
+
         if (!method_exists($instance, $method)) {
             throw new \Exception("Método no encontrado: {$controller}@{$method}");
+        }
+
+        if ($instance instanceof \App\Core\Controller) {
+            foreach ($this->groupMiddleware as $middleware) {
+                $instance->applyMiddleware($middleware, $params);
+            }
         }
 
         call_user_func_array([$instance, $method], [$params]);

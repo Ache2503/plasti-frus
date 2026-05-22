@@ -87,6 +87,10 @@ class MaquinasController extends Controller
     public function delete(array $params): void
     {
         $this->checkAccess();
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/maquinas');
+        }
         if (!puedeEliminar()) {
             set_flash('error', 'No tienes permisos para eliminar');
             $this->redirect('/maquinas');
@@ -97,4 +101,55 @@ class MaquinasController extends Controller
         $this->redirect('/maquinas');
     }
 
+    public function estado(): void
+    {
+        $this->checkAccess();
+        $db = \App\Core\Database::getInstance();
+        $seccion = $_GET['seccion'] ?? null;
+        $where = '';
+        $params = [];
+        if ($seccion) {
+            $where = 'WHERE m.seccion = :seccion';
+            $params['seccion'] = $seccion;
+        }
+        $maquinas = $db->fetchAll("
+            SELECT m.*,
+                   CASE WHEN bp.id_bitacora IS NOT NULL THEN 'detenida' ELSE COALESCE(m.estado, 'apagada') END as estado_real,
+                   bp.motivo_paro, bp.hora_inicio as paro_desde,
+                   (SELECT COUNT(*) FROM ordenes_cabecera o WHERE o.id_maquina = m.id_maquina AND (o.estatus IS NULL OR o.estatus = 'pendiente')) as ordenes_pendientes,
+                   (SELECT MAX(o.fecha) FROM ordenes_cabecera o WHERE o.id_maquina = m.id_maquina AND o.cantidad_real_buenas IS NOT NULL) as ultima_orden
+            FROM maquinas m
+            LEFT JOIN bitacora_paros bp ON bp.id_maquina = m.id_maquina AND bp.hora_fin IS NULL
+            {$where}
+            ORDER BY m.nombre
+        ", $params);
+        $secciones = $db->fetchAll("SELECT DISTINCT seccion FROM maquinas WHERE seccion IS NOT NULL AND seccion != '' ORDER BY seccion");
+        $data = [
+            'maquinas' => $maquinas,
+            'secciones' => array_column($secciones, 'seccion'),
+            'seccion_activa' => $seccion,
+            'pageTitle' => 'Estado de Máquinas',
+            'rol' => user_rol(),
+            'rol_nombre' => user_rol_nombre(),
+        ];
+        view('maquinas/estado', $data);
+    }
+
+    public function estadoJSON(): void
+    {
+        $this->checkAccess();
+        $db = \App\Core\Database::getInstance();
+        $maquinas = $db->fetchAll("
+            SELECT m.id_maquina, m.nombre, m.estado,
+                   CASE WHEN bp.id_bitacora IS NOT NULL THEN 'detenida' ELSE COALESCE(m.estado, 'apagada') END as estado_real,
+                   bp.motivo_paro, bp.hora_inicio as paro_desde,
+                   (SELECT COUNT(*) FROM ordenes_cabecera o WHERE o.id_maquina = m.id_maquina AND (o.estatus IS NULL OR o.estatus IN ('pendiente','en_progreso'))) as ordenes_activas
+            FROM maquinas m
+            LEFT JOIN bitacora_paros bp ON bp.id_maquina = m.id_maquina AND bp.hora_fin IS NULL
+            ORDER BY m.nombre
+        ");
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'data' => $maquinas]);
+        exit;
+    }
 }

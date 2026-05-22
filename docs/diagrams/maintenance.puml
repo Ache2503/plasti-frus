@@ -1,0 +1,29 @@
+@startuml
+title Módulo de Mantenimiento
+
+package "Controladores" {
+  [MantenimientoController]
+}
+
+package "BD" {
+  [mantenimientos_maquinas]
+  [mantenimiento_planes]
+  [bitacora_paros]
+  [maquinas]
+}
+
+MantenimientoController --> mantenimientos_maquinas
+MantenimientoController --> mantenimiento_planes
+MantenimientoController --> bitacora_paros
+MantenimientoController --> maquinas
+
+note right of MantenimientoController
+  BUGS DETECTADOS:
+  - GET delete sin CSRF (routes/maintenance.php:13,14)
+  - Sin CSRF validation en store/planStore/paroStore
+  - INSERT + status update sin transaccion (inconsistencia)
+  - Missing array type hints
+  - Hardcoded rol 3 (excluye contador)
+end note
+
+@enduml

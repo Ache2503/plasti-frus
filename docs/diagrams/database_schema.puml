@@ -1,0 +1,145 @@
+@startuml
+title Esquema de Base de Datos
+
+!define table(x) class x << (T,#FFEEEE) >>
+
+table(usuarios) {
+  id_usuario PK
+  nombre_usuario
+  email
+  password_hash
+  id_rol FK
+  id_empleado FK
+  activo
+}
+
+table(roles) {
+  id_rol PK
+  nombre_rol
+}
+
+table(empleados) {
+  id_empleado PK
+  nombre
+  apellido_paterno
+  apellido_materno
+}
+
+table(clientes) {
+  id_cliente PK
+  razon_social
+  rfc
+  correo
+  telefono
+  id_vendedor FK
+  activo
+}
+
+table(productos) {
+  id_producto PK
+  codigo
+  nombre
+  familia
+  linea
+  precio_venta
+  stock_actual
+  publicar_web
+}
+
+table(materiales) {
+  id_material PK
+  nombre
+  stock_actual_kg
+  punto_reorden_kg
+  id_proveedor FK
+}
+
+table(ordenes_cabecera) {
+  id_orden_cabe PK
+  id_producto FK
+  id_maquina FK
+  id_molde FK
+  id_receta FK
+  cantidad_planificada
+  cantidad_real_buenas
+  estatus
+  turno
+  fecha
+}
+
+table(ventas) {
+  id_venta PK
+  id_cliente FK
+  id_producto FK
+  id_pedido FK
+  cantidad_vendida
+  precio_unitario
+  moneda
+  estatus
+  fecha_venta
+}
+
+table(pedidos) {
+  id_pedido PK
+  id_cliente FK
+  folio
+  total
+  estatus
+}
+
+table(tickets) {
+  id_ticket PK
+  id_venta FK
+  folio_unico
+  datos_json
+  estatus
+  fecha_emision
+}
+
+table(kardex) {
+  id_kardex PK
+  id_material FK
+  movimiento (entrada/salida)
+  cantidad
+  stock_anterior
+  stock_nuevo
+}
+
+table(plan_cuentas) {
+  id_cuenta PK
+  codigo
+  nombre
+  tipo
+  naturaleza
+  nivel
+}
+
+table(polizas) {
+  id_poliza PK
+  numero
+  fecha
+  concepto
+  estatus
+}
+
+table(polizas_detalle) {
+  id_detalle PK
+  id_poliza FK
+  id_cuenta FK
+  cargo
+  abono
+}
+
+usuarios }o--|| roles : id_rol
+usuarios }o--|| empleados : id_empleado
+clientes }o--|| usuarios : id_vendedor
+ventas }o--|| clientes : id_cliente
+ventas }o--|| productos : id_producto
+ventas }o--|| pedidos : id_pedido
+tickets }o--|| ventas : id_venta
+ordenes_cabecera }o--|| productos : id_producto
+kardex }o--|| materiales : id_material
+polizas_detalle }o--|| polizas : id_poliza
+polizas_detalle }o--|| plan_cuentas : id_cuenta
+
+@enduml

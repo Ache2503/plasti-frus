@@ -45,6 +45,10 @@ class IncidenciasController extends Controller
     public function store(): void
     {
         requireRolMultiple([1, 2, 3]);
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/incidencias');
+        }
         $idIncidencia = $this->incidencia->create([
             'id_orden_cabe' => $this->postParam('id_orden_cabe') ?: null,
             'fecha' => $this->postParam('fecha'),
@@ -56,11 +60,13 @@ class IncidenciasController extends Controller
 
         registrar_log('crear_incidencia', 'incidencia', $idIncidencia, $this->postParam('descripcion'));
 
-        $db = \App\Core\Database::getInstance();
+        $userId = (int) $_SESSION['user_id'];
         $supervisores = $db->fetchAll("SELECT id_usuario FROM usuarios WHERE id_rol = 3 AND activo = 1");
         foreach ($supervisores as $sup) {
-            notificar_supervisor((int) $sup['id_usuario'], 'incidencia', 'Nueva incidencia',
-                "Incidencia #{$idIncidencia}: {$this->postParam('descripcion')}", $idIncidencia);
+            if ((int) $sup['id_usuario'] !== $userId) {
+                notificar_supervisor((int) $sup['id_usuario'], 'incidencia', 'Nueva incidencia',
+                    "Incidencia #{$idIncidencia}: {$this->postParam('descripcion')}", $idIncidencia);
+            }
         }
 
         set_flash('success', 'Incidencia registrada correctamente');
@@ -70,6 +76,10 @@ class IncidenciasController extends Controller
     public function cerrar($params): void
     {
         requireRolMultiple([1, 3]);
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/incidencias');
+        }
         $this->incidencia->update($params['id'], [
             'estatus' => 'cerrada',
             'acciones_correctivas' => $this->postParam('acciones_correctivas'),
@@ -81,6 +91,10 @@ class IncidenciasController extends Controller
     public function delete($params): void
     {
         requireRolMultiple([1, 3]);
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/incidencias');
+        }
         $this->incidencia->delete($params['id']);
         set_flash('success', 'Incidencia eliminada correctamente');
         $this->redirect('/incidencias');

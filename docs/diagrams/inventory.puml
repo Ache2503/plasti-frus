@@ -1,0 +1,30 @@
+@startuml
+title Módulo de Inventario / Kardex
+
+actor Usuario
+participant "KardexController" as KC
+participant "KardexService" as KS
+participant "Database" as DB
+
+Usuario -> KC: POST /kardex/store
+KC -> KS: create(data)
+KS -> DB: INSERT kardex
+KS -> DB: SELECT material
+KS -> DB: UPDATE materiales SET stock_actual
+KS --> KC: ok
+KC --> Usuario: redirect
+
+note right of KS
+  BUG CRITICO:
+  Siempre suma cantidad:
+  $nuevoStock = $material['stock_actual'] + $data['cantidad'];
+  
+  Para movimientos tipo 'salida'
+  deberia RESTAR, no sumar.
+  
+  Ademas no hay transaccion:
+  INSERT y UPDATE pueden
+  quedar inconsistentes.
+end note
+
+@enduml

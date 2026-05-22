@@ -1,0 +1,64 @@
+@startuml
+title Portal: Catálogo, Carrito, Cartera, Facturación
+
+actor Cliente
+participant "CatalogoController" as CAT
+participant "CarritoController" as CAR
+participant "CarteraController" as WAL
+participant "FacturaPublicaController" as FAC
+participant "ProductoRepository" as PR
+participant "Database" as DB
+participant "Session" as S
+participant "Ticket Model" as TM
+
+== Catálogo ==
+Cliente -> CAT: GET /catalogo
+CAT -> DB: SELECT productos WHERE publicar_web=1
+CAT -> CAT: search + filter + paginate
+CAT --> Cliente: view('home/catalogo')
+
+== Producto Detail ==
+Cliente -> CAT: GET /producto/{id}
+CAT -> PR: findWithRelations(id)
+PR -> DB: SELECT + JOIN (BUG: columnas inexistentes)
+CAT -> DB: SELECT recomendados ORDER BY RAND()
+CAT --> Cliente: view('home/producto')
+
+== Carrito ==
+Cliente -> CAR: POST /carrito/agregar
+CAR -> DB: verify producto exists
+CAR -> S: save to cart[]
+CAR --> Cliente: redirect /catalogo
+
+Cliente -> CAR: POST /carrito/checkout
+CAR -> DB: beginTransaction
+CAR -> DB: INSERT pedido
+loop each cart item
+  CAR -> DB: INSERT venta
+  CAR -> TM: createFromVenta()
+  CAR -> DB: UPDATE stock
+end
+CAR -> DB: commit
+CAR --> Cliente: redirect /mis-compras
+
+note right of CAR
+  BUGS CRITICOS:
+  - precio_unitario del POST
+    (manipulable por cliente)
+  - Race condition stock
+  - N+1 query en index()
+end note
+
+== Cartera ==
+Cliente -> WAL: GET /cartera
+WAL -> DB: movimientos_cartera
+WAL -> DB: tarjetas_cliente
+WAL -> DB: depositos_referencia
+WAL --> Cliente: view('home/cartera')
+
+== Factura Pública ==
+Cliente -> FAC: POST /factura/buscar
+FAC -> TM: getByFolio(folio)
+FAC --> Cliente: view('factura_publica/formulario')
+
+@enduml

@@ -1,0 +1,72 @@
+@startuml
+title Ciclo de Vida de una Petición
+
+actor "Navegador" as B
+participant "public/router.php" as RT
+participant "public/index.php" as IX
+participant "bootstrap/app.php" as BOOT
+participant "App\\Core\\Router" as R
+participant "routes/web.php" as RW
+participant "Middleware" as MW
+participant "Controller" as C
+participant "Model/Repo/Service" as M
+participant "App\\Core\\View" as V
+participant "Database (MySQL)" as DB
+participant "App\\Exceptions\\Handler" as EH
+
+B -> RT: GET /producto/4
+RT -> RT: ¿archivo estatico?
+alt es archivo estatico
+  RT -> B: serve file + MIME type
+else no es archivo
+  RT -> IX: require index.php
+  IX -> IX: session_start()
+  IX -> BOOT: require bootstrap
+  BOOT -> BOOT: load .env, config, constants
+  BOOT -> EH: Handler::register()
+  IX -> R: new Router()
+  IX -> RW: require routes (load 13 archivos)
+  IX -> R: dispatch(uri, method)
+  
+  R -> R: handleDispatch()
+  R -> R: parse URI, match route
+  R -> R: executeAction('Ctrl@metodo', params)
+  
+  alt Action matched
+    R -> MW: applyMiddleware()
+    alt CSRF check fails
+      MW -> R: 419 error
+    else Auth check fails
+      MW -> R: redirect /login
+    else Role check fails
+      MW -> R: redirect / + error
+    else All pass
+      R -> C: call_user_func_array([Ctrl, metodo], [params])
+      C -> M: query/update data
+      M -> DB: SQL via PDO
+      DB --> M: results
+      M --> C: data
+      C -> V: View::render(view, data)
+      V -> V: extract(data)
+      V -> V: include layout + view
+      V --> B: HTML response
+    end
+  else No route matched
+    R -> R: 404 Not Found
+  end
+  
+  alt Exception thrown
+    C -> EH: Handler::handle(e)
+    EH -> EH: logError(e)
+    EH -> B: 500 error page
+  end
+end
+
+note right of RT
+  BUG CRITICO:
+  Path traversal via ../ en URI
+  permite leer cualquier archivo
+  del sistema de archivos.
+end note
+
+@enduml

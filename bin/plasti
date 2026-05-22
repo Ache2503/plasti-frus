@@ -1,0 +1,40 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../bootstrap/app.php';
+
+use App\Console\Migrator;
+
+$command = $argv[1] ?? null;
+
+switch ($command) {
+    case 'migrate':
+        (new Migrator())->run();
+        break;
+
+    case 'migrate:rollback':
+        (new Migrator())->rollback();
+        break;
+
+    case 'migrate:reset':
+        (new Migrator())->reset();
+        break;
+
+    case 'help':
+    case '--help':
+    case '-h':
+        echo "Plasti Frus CLI\n";
+        echo "Usage: plasti <command>\n\n";
+        echo "Commands:\n";
+        echo "  migrate           Run all pending migrations\n";
+        echo "  migrate:rollback  Rollback the last migration\n";
+        echo "  migrate:reset     Rollback all migrations\n";
+        echo "  help              Display this help message\n";
+        break;
+
+    default:
+        echo "Unknown command '{$command}'. Use 'plasti help' for available commands.\n";
+        exit(1);
+}

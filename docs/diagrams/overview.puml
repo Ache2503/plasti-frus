@@ -1,0 +1,71 @@
+@startuml
+!theme plain
+
+package "Capa HTTP" {
+  [index.php] --> [router.php]
+  [index.php] --> [bootstrap/app.php]
+  [bootstrap/app.php] --> [config/]
+  [bootstrap/app.php] --> [.env]
+  [index.php] --> [Router::dispatch()]
+  [Router::dispatch()] --> [Middleware]
+  [Middleware] --> [Controller]
+}
+
+package "Controladores" {
+  [Auth\\AuthController]
+  [Dashboard\\HomeController]
+  [Production\\*]
+  [Sales\\*]
+  [Crm\\ClientesController]
+  [Portal\\*]
+  [Accounting\\*]
+  [Quality\\*]
+  [Inventory\\KardexController]
+  [Maintenance\\*]
+  [System\\*]
+  [Api\\*]
+}
+
+package "Servicios" {
+  [AuthService]
+  [VentaService]
+  [OrdenService]
+  [KardexService]
+  [NotificacionService]
+}
+
+package "Repositorios" {
+  [BaseRepository]
+  [ClienteRepository]
+  [MaterialRepository]
+  [ProductoRepository]
+  [ProveedorRepository]
+  [UserRepository]
+  [VentaRepository]
+}
+
+package "Modelos" {
+  [Core\\Model] --> [Core\\Database]
+  [Cliente]
+  [Producto]
+  [Ticket]
+  [.. otros]
+}
+
+package "Vistas" {
+  [layouts/]
+  [home/]
+  [clientes/]
+  [production/]
+  [.. por modulo]
+}
+
+Controller --> Servicios
+Controller --> Repositorios
+Controller --> Vistas
+Servicios --> Repositorios
+Repositorios --> Core\\Database
+Servicios --> Core\\Database
+Modelos --> Core\\Database
+
+@enduml

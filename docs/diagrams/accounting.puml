@@ -1,0 +1,39 @@
+@startuml
+title Módulo de Contabilidad
+
+package "Controladores" {
+  [PlanCuentasController]
+  [PolizasController]
+  [BalanceController]
+  [FacturasController]
+}
+
+package "BD" {
+  [plan_cuentas]
+  [polizas]
+  [polizas_detalle]
+  [solicitudes_factura]
+  [periodos_contables]
+  [facturas]
+}
+
+PlanCuentasController --> plan_cuentas
+PolizasController --> polizas
+PolizasController --> polizas_detalle
+BalanceController --> plan_cuentas
+BalanceController --> polizas_detalle
+FacturasController --> solicitudes_factura
+FacturasController --> facturas
+
+note right of PlanCuentasController
+  BUG: tipo y naturaleza no se
+  validan contra lista blanca.
+  Se aceptan valores inválidos.
+end note
+
+note right of PolizasController
+  LIMIT/OFFSET interpolado en SQL
+  (riesgo de inyeccion bajo)
+end note
+
+@enduml

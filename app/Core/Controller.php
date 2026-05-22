@@ -1,6 +1,5 @@
 <?php
 namespace App\Core;
-
 class Controller
 {
     protected function view(string $view, array $data = []): void
@@ -30,6 +29,11 @@ class Controller
     protected function postParam(string $key, $default = null)
     {
         return $_POST[$key] ?? $default;
+    }
+
+    protected function input(string $key, $default = null)
+    {
+        return $_POST[$key] ?? $_GET[$key] ?? $default;
     }
 
     protected function isPost(): bool
@@ -98,6 +102,18 @@ class Controller
         if (!es_admin()) {
             set_flash('error', 'Solo el administrador puede acceder a esta sección');
             $this->redirect('/');
+        }
+    }
+
+    public function applyMiddleware(string $middleware, array $params = []): void
+    {
+        $middlewareClass = "App\\Http\\Middleware\\{$middleware}Middleware";
+
+        if (class_exists($middlewareClass)) {
+            $instance = new $middlewareClass();
+            if (method_exists($instance, 'handle')) {
+                $instance->handle($params);
+            }
         }
     }
 }

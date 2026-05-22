@@ -1,0 +1,59 @@
+@startuml
+title Módulo de Producción
+
+package "Controladores" {
+  [MaterialesController]
+  [ProductosController]
+  [OrdenesController]
+  [RecetasController]
+  [MoldesController]
+  [MaquinasController]
+}
+
+package "Servicios" {
+  [OrdenService]
+}
+
+package "Repositorios" {
+  [MaterialRepository]
+  [ProductoRepository]
+}
+
+package "BD" {
+  [materiales]
+  [productos]
+  [ordenes_cabecera]
+  [ordenes_detalle]
+  [recetas_cabecera]
+  [recetas_detalle]
+  [moldes]
+  [maquinas]
+}
+
+MaterialesController --> MaterialRepository
+ProductosController --> ProductoRepository
+OrdenesController --> OrdenService
+OrdenService --> "ordenes_cabecera"
+OrdenService --> "ordenes_detalle"
+OrdenService --> "productos"
+OrdenService --> "moldes"
+MaterialRepository --> materiales
+ProductoRepository --> productos
+
+note right of OrdenService
+  Flujo:
+  1. create() -> insert cabecera + detalle
+  2. start() -> update estatus
+  3. complete() -> update cantidad_real_buenas
+  4. updateMoldeCiclos() -> actualiza ciclos molde
+end note
+
+note right of OrdenesController
+  BUGS detectados:
+  - GET delete sin CSRF (linea 54 routes)
+  - completar() sin check de existencia
+  - redirect_to sin validar (open redirect)
+  - HTML mal cerrado en detalle.php
+end note
+
+@enduml

@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS presupuestos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cuenta_id INT NOT NULL,
+    anio INT NOT NULL,
+    mes INT NOT NULL,
+    monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_cuenta_periodo (cuenta_id, anio, mes),
+    FOREIGN KEY (cuenta_id) REFERENCES plan_cuentas(id_cuenta) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

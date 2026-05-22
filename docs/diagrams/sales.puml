@@ -1,0 +1,45 @@
+@startuml
+title Módulo de Ventas
+
+actor Usuario
+participant "Router" as R
+participant "VentasController" as VC
+participant "VentaService" as VS
+participant "VendedorController" as VDC
+participant "VentaRequest" as VR
+participant "Database" as DB
+participant "Ticket Model" as TM
+
+== Crear Venta ==
+Usuario -> R: POST /ventas/store
+R -> VC: store()
+VC -> VR: validate(data)
+alt Validation fails
+  VR --> VC: ValidationException
+  VC -> R: redirect back + errors
+else Validation passes
+  VC -> VS: create(data)
+  VS -> DB: INSERT venta
+  VS -> DB: INSERT comision
+  VS -> TM: createFromVenta()
+  TM -> DB: INSERT ticket
+  VS --> VC: id_venta
+  VC -> R: redirect /ventas + success
+end
+
+== Ver Ticket PDF ==
+Usuario -> R: GET /tickets/{folio}/pdf
+R -> TicketsController: pdf(folio)
+TicketsController -> TM: getByFolio(folio)
+TM -> DB: SELECT con JOIN
+TicketsController -> TicketsController: renderInvoiceHtml()
+TicketsController -> Dompdf: stream PDF
+
+note right of VS
+  BUG: precio_unitario viene
+  del POST, no de la BD.
+  El cliente puede manipular
+  el precio en el carrito.
+end note
+
+@enduml

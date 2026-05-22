@@ -1,9 +1,31 @@
 <?php
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$publicDir = __DIR__;
+$publicDir = realpath(__DIR__);
+
+if ($uri === false || $uri === null) {
+    http_response_code(400);
+    echo 'Bad Request';
+    return false;
+}
+
+$uri = rtrim((string) $uri, '/') ?: '/';
+
+if (strpos($uri, '..') !== false) {
+    http_response_code(400);
+    echo 'Bad Request';
+    return false;
+}
+
 $file = $publicDir . $uri;
 
 if ($uri !== '/' && file_exists($file) && !is_dir($file)) {
+    $realFile = realpath($file);
+    if ($realFile === false || strpos($realFile, $publicDir) !== 0) {
+        http_response_code(403);
+        echo 'Forbidden';
+        return false;
+    }
+
     $ext = pathinfo($file, PATHINFO_EXTENSION);
     $mimeTypes = [
         'css' => 'text/css',
@@ -20,6 +42,8 @@ if ($uri !== '/' && file_exists($file) && !is_dir($file)) {
     ];
     if (isset($mimeTypes[$ext])) {
         header('Content-Type: ' . $mimeTypes[$ext]);
+    } else {
+        header('Content-Type: application/octet-stream');
     }
     readfile($file);
     return true;

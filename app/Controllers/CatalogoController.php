@@ -54,6 +54,14 @@ class CatalogoController extends Controller
         $lineas = $db->fetchAll("SELECT DISTINCT linea FROM productos WHERE linea IS NOT NULL AND (publicar_web = 1 OR publicar_web IS NULL) ORDER BY linea");
 
         $carritoCount = array_sum(array_column($_SESSION['cart'] ?? [], 'cantidad'));
+        $wishlistIds = [];
+        if (es_cliente() && function_exists('user_id_cliente')) {
+            $cid = user_id_cliente();
+            if ($cid) {
+                $wlRows = $db->fetchAll("SELECT id_producto FROM wishlist WHERE id_cliente = :id", ['id' => $cid]);
+                $wishlistIds = array_column($wlRows, 'id_producto');
+            }
+        }
 
         $data = [
             'productos' => $productos,
@@ -69,6 +77,7 @@ class CatalogoController extends Controller
             'page' => $page,
             'totalPages' => $totalPages,
             'total' => $total,
+            'wishlist_ids' => $wishlistIds,
         ];
         $this->view('home/catalogo', $data);
     }

@@ -1,0 +1,43 @@
+@startuml
+title Flujo de Autenticación
+
+actor Usuario
+participant "Router" as R
+participant "AuthController" as AC
+participant "AuthService" as AS
+participant "User Model" as UM
+participant "Database" as DB
+participant "Session" as S
+
+== Login ==
+Usuario -> R: POST /login
+R -> AC: login()
+AC -> AS: authenticate(email, pass)
+AS -> UM: findByEmail(email)
+UM -> DB: SELECT * FROM usuarios WHERE email = :email
+DB --> UM: user data
+UM --> AS: user array
+AS -> AS: password_verify(password, hash)
+AS --> AC: success / fail
+alt Success
+  AC -> S: set user_id, user_rol, etc
+  AC -> R: redirect /home
+else Fail
+  AC -> R: redirect /login + error
+end
+
+== Logout ==
+Usuario -> R: GET /logout
+R -> AC: logout()
+AC -> AS: logout()
+AS -> S: session_destroy()
+AC -> R: redirect /login
+
+== Register ==
+Usuario -> R: POST /register
+R -> AC: register()
+AC -> AS: createUser(data)
+AS -> UM: create(data)
+AS --> AC: user created
+AC -> R: redirect /login
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+title Dashboard por Rol
+
+actor Usuario
+participant "Router" as R
+participant "HomeController" as HC
+participant "ClienteRepository" as CR
+participant "UserRepository" as UR
+participant "NotificacionService" as NS
+participant "Database" as DB
+participant "View" as V
+
+Usuario -> R: GET /
+R -> HC: index()
+HC -> HC: requireAuth()
+HC -> HC: check user_rol()
+
+alt Admin (rol=1)
+  HC -> DB: COUNT(*) materiales, productos, ordenes...
+  HC -> CR: count()
+  HC -> UR: count()
+  HC -> V: view('home/admin', data)
+else Supervisor (rol=3)
+  HC -> DB: ordenes_hoy, materiales_bajos...
+  HC -> NS: supervisorNotifications()
+  HC -> V: view('home/supervisor', data)
+else Operador (rol=2)
+  HC -> DB: ordenes_hoy, maquinas_con_estado...
+  HC -> NS: operadorNotifications()
+  HC -> V: view('home/operador', data)
+else Vendedor (rol=4)
+  HC -> CR: findByVendedor(userId)
+  HC -> DB: ventas_mes, top_clientes...
+  HC -> V: view('home/vendedor', data)
+else Cliente (rol=5)
+  HC -> CR: findWithVendedor(idCliente)
+  HC -> DB: mis_ventas, mis_pedidos...
+  HC -> V: view('home/cliente', data)
+else Contador (rol=6)
+  HC -> DB: plan_cuentas, polizas...
+  HC -> V: view('home/contador', data)
+end
+
+@enduml

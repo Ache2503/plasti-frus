@@ -1,0 +1,27 @@
+@startuml
+title Módulo de Calidad
+
+package "Controladores" {
+  [CalidadController]
+}
+
+package "BD" {
+  [inspecciones_calidad]
+  [rechazos_calidad]
+  [ordenes_cabecera]
+}
+
+CalidadController --> inspecciones_calidad
+CalidadController --> rechazos_calidad
+CalidadController --> ordenes_cabecera
+
+note right of CalidadController
+  BUGS DETECTADOS:
+  - GET delete sin CSRF (routes/quality.php:8,12)
+  - Sin CSRF validation en store()
+  - ID inspeccion debil (5 hex chars)
+  - Sin validacion required fields
+  - Missing array type hints en params
+end note
+
+@enduml

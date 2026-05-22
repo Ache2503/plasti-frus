@@ -1,0 +1,58 @@
+@startuml
+title Módulo de Sistema
+
+package "Controladores" {
+  [UsuariosController]
+  [ProfileController]
+  [AdminController]
+  [NotificacionesController]
+  [ReportesController]
+  [IncidenciasController]
+}
+
+package "Servicios" {
+  [AuthService]
+  [NotificacionService]
+}
+
+package "Repositorios" {
+  [UserRepository]
+}
+
+package "BD" {
+  [usuarios]
+  [empleados]
+  [roles]
+  [notificaciones_*]
+  [incidencias_produccion]
+  [log_actividad]
+}
+
+UsuariosController --> UserRepository
+UsuariosController --> usuarios
+ProfileController --> UserRepository
+ProfileController --> AuthService
+NotificacionesController --> NotificacionService
+IncidenciasController --> incidencias_produccion
+ReportesController --> DB (queries directas)
+
+note right of UsuariosController
+  BUGS DETECTADOS:
+  - GET /usuarios/delete/{id} (CSRF)
+  - Sin CSRF en store/update/delete
+  - requireRolMultiple sin requireAuth
+end note
+
+note right of IncidenciasController
+  BUGS:
+  - GET /incidencias/delete/{id} (CSRF)
+  - Sin CSRF en store/cerrar
+  - requireRolMultiple sin requireAuth
+end note
+
+note right of ProfileController
+  BUG: $user puede ser null
+  al acceder $user['password_hash']
+end note
+
+@enduml

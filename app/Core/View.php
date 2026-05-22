@@ -9,11 +9,10 @@ class View
         $viewPath = self::getViewPath($view);
 
         if (!file_exists($viewPath)) {
-            throw new \Exception("Vista no encontrada: {$view}");
+            throw new \Exception("Vista no encontrada: {$view} (buscada en: {$viewPath})");
         }
 
-        $basePath = self::getBasePath();
-        $layoutPath = $basePath . '/layouts/main.php';
+        $layoutPath = self::getBasePath() . '/layouts/main.php';
         $content = $viewPath;
 
         if (file_exists($layoutPath)) {
@@ -40,6 +39,9 @@ class View
 
     private static function getBasePath(): string
     {
-        return dirname(__DIR__) . '/views';
+        if (defined('VIEWS_PATH')) {
+            return VIEWS_PATH;
+        }
+        return dirname(__DIR__, 2) . '/resources/views';
     }
 }

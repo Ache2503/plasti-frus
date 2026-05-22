@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# PlastiFrus CLI Tool
+php "$(dirname "$0")/app/Console/kernel.php" "$@"

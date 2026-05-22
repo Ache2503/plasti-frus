@@ -1,0 +1,45 @@
+@startuml
+title Módulo CRM / Clientes
+
+actor Usuario
+participant "Router" as R
+participant "ClientesController" as CC
+participant "ClienteRepository" as CR
+participant "Database" as DB
+participant "View" as V
+
+== CRUD Clientes ==
+Usuario -> R: GET /clientes
+R -> CC: index()
+CC -> CR: allWithVendedor()
+CR -> DB: SELECT con LEFT JOIN
+DB --> CR: clientes array
+CC -> V: view('clientes/index')
+
+Usuario -> R: GET /clientes/create
+R -> CC: create()
+CC -> V: view('clientes/create')
+
+Usuario -> R: POST /clientes/store
+R -> CC: store()
+CC -> CR: create(data)
+CC -> R: redirect /clientes
+
+Usuario -> R: GET /clientes/show/{id}
+R -> CC: show(id)
+CC -> CR: findWithVendedor(id)
+CC -> DB: ventas del cliente
+CC -> V: view('clientes/show')
+
+== Mis Clientes (Vendedor) ==
+Usuario -> R: GET /mis-clientes
+R -> Dashboard\HomeController: misCompras()
+
+note right of CR
+  BUG: search() usa columna
+  'email' que NO existe en
+  la tabla clientes.
+  La columna correcta es 'correo'.
+end note
+
+@enduml
