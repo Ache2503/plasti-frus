@@ -1,46 +1,102 @@
-# Plasti Frus — Sistema de Gestión de Fábrica de Plásticos
+# Plasti Frus — Sistema de Gestión para Fábrica de Plásticos
 
-Sistema web MVC para la gestión integral de una fábrica de inyección de plásticos. Cubre producción, calidad, ventas, clientes, mantenimiento, inventarios, KPIs y más.
+**Plasti Frus** es un sistema ERP web desarrollado en PHP nativo con arquitectura MVC para la gestión integral de una fábrica de inyección de plásticos. Cubre producción, calidad, ventas, CRM, inventarios, contabilidad, mantenimiento, KPIs, portal de cliente, y más — todo en un solo sistema modular basado en roles.
+
+---
 
 ## Stack Tecnológico
 
 | Componente | Tecnología |
-|------------|-----------|
-| **Backend** | PHP 8.3.6 |
-| **Base de datos** | MySQL / MariaDB |
-| **Frontend** | Bootstrap 5.3 + DataTables 1.13 + Chart.js + Bootstrap Icons |
-| **Dependencias** | Composer (vlucas/phpdotenv) |
-| **Arquitectura** | MVC propio (Router → Controller → Model → View + Layout) |
-| **ORM** | Active Record simple con PDO parametrizado |
-| **Autenticación** | Sesiones PHP + password_hash/bcrypt |
+|---|---|
+| **Backend** | PHP 8.3 — MVC propio (Router → Controller → Service → Model → View) |
+| **Base de datos** | MySQL / MariaDB — 140+ tablas normalizadas |
+| **Frontend** | Bootstrap 5.3, DataTables 1.13, Chart.js 4, Bootstrap Icons |
+| **Testing** | PHPUnit 11 — 63 tests funcionales (127 assertions) |
+| **Dependencias** | Composer — PHPMailer, Dompdf, PhpSpreadsheet, vlucas/phpdotenv |
+| **ORM** | Active Record simple con PDO parametrizado (sin inyección SQL) |
+| **Autenticación** | Sesiones PHP + bcrypt + recuperación de contraseña por email |
 
 ---
 
 ## Inicio Rápido
 
 ```bash
-# 1. Clonar repositorio
+# 1. Clonar e instalar dependencias
 cd /var/www/plasti_frus
-
-# 2. Instalar dependencias
 composer install
 
-# 3. Crear base de datos y cargar esquema
-mysql -u root -p < database/schema.sql
+# 2. Configurar base de datos
+# Ejecutar el esquema SQL completo (database/schema.sql) y migraciones en database/migrations/
 
-# 4. Ejecutar migraciones de roles y clientes
-mysql -u root -p fabrica_plasticos < database/migration_roles.sql
-mysql -u root -p fabrica_plasticos < database/migration_clientes.sql
-
-# 5. Configurar .env
+# 3. Configurar entorno
 cp .env.example .env
-# Editar DB_HOST, DB_NAME, DB_USER, DB_PASS, APP_URL
+# Editar DB_HOST, DB_NAME, DB_USER, DB_PASS, APP_URL, y configuración SMTP (MAIL_*)
 
-# 6. Iniciar servidor de desarrollo
-php -S localhost:8000 -t public
+# 4. Cargar datos de demostración
+php seed.php
+
+# 5. Iniciar servidor de desarrollo
+php -S localhost:8000 -t public/ public/router.php
+
+# 6. Acceder al sistema
+# Abrir http://localhost:8000 en el navegador
+# Usuario: admin / Contraseña: password
 ```
 
-> **Nota:** El esquema SQL incluye la estructura de ~100 tablas pero **no incluye datos semilla**. Debes insertar los roles, usuarios y datos de prueba manualmente o mediante un script de seed.
+---
+
+## Usuarios de Demostración
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| admin | password | Administrador |
+| supervisor | password | Supervisor |
+| operador1 | password | Operador |
+| vendedor1 | password | Vendedor |
+| cliente1 | password | Cliente (portal) |
+| contador | password | Contador |
+
+---
+
+## Ejecutar Pruebas
+
+```bash
+# Todas las pruebas (63 tests, 127 assertions)
+vendor/bin/phpunit
+
+# Solo pruebas unitarias
+vendor/bin/phpunit --testsuite=Unit
+
+# Solo pruebas funcionales
+vendor/bin/phpunit --testsuite=Feature
+```
+
+### Cobertura de pruebas
+
+| Suite | Tests | Descripción |
+|---|---|---|
+| `tests/Feature/LoginTest` | 6 | Login válido, inválido, contraseña incorrecta, sesión, logout |
+| `tests/Feature/RegisterTest` | 4 | Registro cliente, duplicados, hash de contraseña |
+| `tests/Feature/InventoryTest` | 4 | Crear material/producto, cálculos stock, detección bajo inventario |
+| `tests/Feature/ProductionOrderTest` | 5 | Crear orden, FK inválida, cambio de estatus, cantidad límite |
+| `tests/Unit/Helpers/ValidatorsTest` | 16 | Validación de email, RFC, teléfono, rangos, fechas, etc. |
+| `tests/Unit/Helpers/FuncionesTest` | 12 | format_money, safe_string, csrf_token, time_ago, etc. |
+| `tests/Unit/Core/PaginationTest` | 7 | Páginas única/múltiple/central/última, renderizado |
+| `tests/Unit/Services/*` | 9 | Existencia de clases AuditService, ExportService, MailService, AuthService |
+
+---
+
+## Cargar Datos de Demostración
+
+```bash
+# Carga inicial (no duplica datos existentes)
+php seed.php
+
+# Reiniciar datos demo (limpia tablas antes de insertar)
+php seed.php --fresh
+```
+
+Los seeders generan datos realistas y coherentes para demostraciones en vivo, incluyendo productos, órdenes en varios estados, movimientos de inventario, ventas y registros de auditoría.
 
 ---
 
@@ -49,277 +105,286 @@ php -S localhost:8000 -t public
 ```
 plasti_frus/
 ├── app/
-│   ├── config/          # Configuración de la app, rutas, DB
-│   ├── Controllers/     # 20 controladores
-│   ├── Core/            # Framework: Router, Controller, Model, Database, View
-│   ├── helpers/         # funciones.php + validators.php
-│   ├── Models/          # 15 modelos
-│   └── views/           # ~55 vistas organizadas por módulo
-│       ├── auth/
-│       ├── layouts/     # main.php, header.php, sidebar.php, footer.php
-│       └── partials/    # Componentes reutilizables (filter_bar.php)
+│   ├── Config/              # Configuración de la app, DB, permisos
+│   ├── Core/                # Framework MVC: Database, Router, Controller, Model, View, Pagination
+│   ├── Exceptions/          # Manejador global de excepciones
+│   ├── Helpers/             # funciones.php (URLs, sesión, formato, permisos, auditoría) + validators.php
+│   ├── Http/
+│   │   ├── Controllers/     # 54+ controladores organizados por módulo
+│   │   │   ├── Accounting/  # Contabilidad completa (balance, pólizas, flujo, presupuestos)
+│   │   │   ├── Api/         # Endpoints REST para dashboard, clientes, productos, ventas
+│   │   │   ├── Auth/        # Autenticación, registro, recuperación de contraseña
+│   │   │   ├── Crm/         # Clientes, oportunidades (pipeline Kanban), actividades, mensajes
+│   │   │   ├── Dashboard/   # Paneles por rol (admin, supervisor, operador, vendedor, cliente, contador)
+│   │   │   ├── Inventory/   # Kardex de materiales
+│   │   │   ├── Maintenance/ # Mantenimiento de máquinas, paros, plan de mantenimiento
+│   │   │   ├── Portal/      # Catálogo público, carrito, wishlist, tickets, cartera
+│   │   │   ├── Production/  # Materiales, productos, recetas, órdenes, máquinas, moldes
+│   │   │   ├── Purchasing/  # Proveedores
+│   │   │   ├── Quality/     # Inspecciones y rechazos de calidad
+│   │   │   ├── Sales/       # Ventas, tickets, comisiones, pipeline vendedor
+│   │   │   └── System/      # Usuarios, perfil, reportes KPI/producción, auditoría, incidencias
+│   │   └── Requests/        # Form requests con validación
+│   ├── Models/              # 15+ modelos Active Record
+│   ├── Repositories/        # Capa de repositorios para consultas especializadas
+│   └── Services/            # Servicios: Auth, Audit, Export (PDF/Excel), Mail, Kardex
+├── bootstrap/               # Punto de entrada de la aplicación (autoload, constantes, entorno)
+├── config/                  # Archivos de configuración (app, database, permissions)
 ├── database/
-│   ├── schema.sql              # Estructura completa de la BD
-│   ├── migration_roles.sql     # Roles Vendedor (4) y Cliente (5)
-│   └── migration_clientes.sql  # id_vendedor + solicitudes_factura
+│   ├── migrations/          # Migraciones PHP incrementales (12 aplicadas)
+│   └── seeds/               # Seeders de datos de demostración
 ├── public/
-│   ├── index.php        # Punto de entrada
-│   ├── .htaccess        # Rewrite rules (Apache)
-│   ├── router.php       # Router para servidor built-in de PHP
+│   ├── index.php            # Punto de entrada
+│   ├── router.php           # Router para servidor built-in de PHP
 │   └── assets/
-│       ├── css/         # main.css, dashboard.css
-│       ├── js/          # main.js, charts.js, validations.js
+│       ├── css/             # main.css, dashboard.css, enhanced.css (UI profesional)
+│       ├── js/              # main.js, charts.js, validations.js
 │       └── images/
-└── vendor/              # Dependencias Composer
+├── resources/views/         # ~70 vistas organizadas por módulo
+│   ├── auth/                # Login, registro, recuperación de contraseña
+│   ├── layouts/             # main.php, header.php, sidebar.php, footer.php
+│   ├── partials/            # Componentes reutilizables (filter_bar, pagination, export_buttons)
+│   └── home/                # Dashboards por rol (admin, supervisor, operador, vendedor, etc.)
+├── routes/                  # 17 archivos de rutas organizados por módulo
+├── storage/
+│   ├── cache/               # Caché de configuración
+│   ├── logs/                # Logs de aplicación
+│   └── exports/             # Exportaciones temporales
+├── tests/                   # PHPUnit tests (63 tests funcionales + unitarios)
+├── seed.php                 # CLI para cargar datos de demostración
+├── composer.json
+└── phpunit.xml.dist
 ```
 
 ---
 
 ## Roles y Permisos
 
-| ID | Rol | Descripción | Módulos accesibles |
-|----|-----|-------------|-------------------|
-| 1 | **Administrador** | Acceso total a todos los módulos del sistema | dashboard, materiales, productos, recetas, ordenes, maquinas, moldes, clientes, proveedores, ventas, kpi, reportes, usuarios, calidad, kardex, incidencias, mantenimiento, notificaciones |
-| 2 | **Operador** | Personal de producción | dashboard, productos, recetas, ordenes, maquinas, moldes |
-| 3 | **Supervisor** | Supervisión de producción y calidad | Admin + dashboard, materiales, productos, recetas, ordenes, maquinas, moldes, clientes, proveedores, ventas, kpi, reportes, calidad, kardex, incidencias, mantenimiento, notificaciones |
-| 4 | **Vendedor** | Ventas y atención a clientes | dashboard, productos, clientes, ventas |
-| 5 | **Cliente** | Portal de cliente (compras, facturas, catálogo) | dashboard, catalogo |
+| ID | Rol | Descripción |
+|---|---|---|
+| 1 | **Administrador** | Acceso total al sistema |
+| 2 | **Operador** | Producción: órdenes, máquinas, inspecciones, incidencias, bitácora |
+| 3 | **Supervisor** | Administración de producción, calidad, inventarios |
+| 4 | **Vendedor** | Pipeline de ventas, CRM, comisiones, reportes |
+| 5 | **Cliente** | Portal: catálogo, compras, facturas, tickets, cartera |
+| 6 | **Contador** | Contabilidad completa: pólizas, balances, impuestos |
 
-### Sistema de permisos en `requireRol()`:
-
-```php
-requireRol(1) → solo Admin
-requireRol(2) → solo Operador
-requireRol(3) → Admin + Supervisor
-requireRol(4) → Admin + Vendedor
-requireRol(5) → solo Cliente
-requireAuth() → cualquier usuario autenticado (roles 1-5)
-```
+Cada módulo tiene control de acceso granular vía `puede_acceder()` y `requireRol()`.
 
 ---
 
-## Estructura de la Base de Datos (~100 tablas)
+## Funcionalidades Principales
 
-### Tablas principales (con CRUD implementado)
+### Producción
+- Gestión de materiales con control de stock y punto de reorden
+- Catálogo de productos con precios, pesos, dimensiones y familias
+- Recetas de producción con versiones y detalle de materiales
+- Órdenes de producción con seguimiento de estatus (pendiente → en_proceso → completada)
+- Asignación de máquinas, moldes y operadores por turno
 
-| Tabla | Descripción | Controlador |
-|-------|-------------|-------------|
-| `roles` | Roles de usuario (Admin, Operador, Supervisor, Vendedor, Cliente) | — |
-| `usuarios` | Usuarios del sistema (con password_hash) | UsuariosController |
-| `empleados` | Empleados de la fábrica | — |
-| `clientes` | Clientes | ClientesController |
-| `proveedores` | Proveedores | ProveedoresController |
-| `materiales` | Materias primas con stock y punto de reorden | MaterialesController |
-| `productos` | Productos terminados | ProductosController |
-| `maquinas` | Máquinas de inyección | MaquinasController |
-| `moldes` | Moldes con cavidades | MoldesController |
-| `recetas_cabecera` | Recetas de producción (versiones) | RecetasController |
-| `recetas_detalle` | Materiales componentes de cada receta | — |
-| `ordenes_cabecera` | Órdenes de producción | OrdenesController |
-| `ordenes_merma` | Mermas por orden | — |
-| `seguimiento_ordenes` | Historial de estatus de órdenes | — |
-| `ventas` | Ventas a clientes | VentasController |
-| `incidencias_produccion` | Incidentes en producción | IncidenciasController |
-| `inspecciones_calidad` | Inspecciones de calidad | CalidadController |
-| `rechazos_calidad` | Rechazos de calidad | CalidadController |
-| `kardex_materiales` | Movimientos de inventario | KardexController |
-| `mantenimientos_maquinas` | Mantenimientos realizados | MantenimientoController |
-| `plan_mantenimiento` | Mantenimientos programados | MantenimientoController |
-| `bitacora_paros` | Registro de paros de máquina | MantenimientoController |
-| `solicitudes_factura` | Solicitudes de factura de clientes | HomeController |
+### Calidad
+- Inspecciones de calidad con parámetros configurables
+- Registro de rechazos con causas y análisis
+- Control de mermas y scrap por orden
 
-### Tablas adicionales en el esquema (no implementadas en CRUD, disponibles para futuros módulos)
+### CRM y Ventas
+- Pipeline Kanban de oportunidades comerciales
+- Gestión completa de clientes con historial de interacciones
+- Comisiones por vendedor con gráficas y pagos
+- Agenda de actividades y mensajería interna
+- Portal de cliente con catálogo, carrito de compras y facturación
 
-**Costos y KPIs:** `costo_produccion`, `indicadores_kpi`, `indicadores_oee`, `eficiencia_operativa`, `eficiencia_operadores`, `productividad_turnos`
+### Inventarios
+- Kardex de materiales con entradas y salidas
+- Alertas de stock bajo
+- Historial completo de movimientos
 
-**Logística:** `embarques`, `ordenes_embarque`, `bitacora_embarque`
+### Contabilidad
+- Plan de cuentas completo
+- Pólizas contables (diario, ingresos, egresos)
+- Balance General, Estado de Resultados, Balanza de Comprobación
+- Libro Diario y Libro Mayor
+- Flujo de Efectivo y Presupuestos
+- Cierre contable por periodos
+- Exportación de reportes contables
 
-**Compras:** `cotizaciones_proveedores`, `ordenes_compra`, `ordenes_compra_materiales`, `ordenes_compra_refacciones`, `ordenes_compra_productos`
-
-**Comercial:** `cotizaciones_clientes`, `cotizaciones_productos`, `cotizaciones_servicios`, `ordenes_venta`, `ordenes_servicio`
-
-**Facturación:** `facturas`, `cuentas_por_cobrar`, `cuentas_por_pagar`
-
-**Control de calidad:** `parametros_calidad`, `parametros_procesos`, `control_temperatura`, `control_presion`, `control_tiempo`, `pruebas_laboratorio`, `liberacion_produccion`
-
-**Mantenimiento:** `calibraciones_maquinas`, `mantenimientos_moldes`, `checklist_mantenimiento`, `checklist_calibracion`, `refacciones_maquinas`
-
-**Producción:** `consumo_material_por_orden`, `consumo_energia_por_orden`, `consumo_agua_por_orden`, `control_pesados_materiales`, `solicitud_material`, `surtido_materiales`, `scrap_reciclado`, `indicadores_scrap`, `planeacion_produccion`
-
-**Recursos humanos:** `capacitaciones_empleados`, `permisos_empleados`, `vacaciones_empleados`, `ausencias_empleados`, `accesos_sistema`, `evaluacion_empleados`
-
-**Evaluaciones:** `evaluacion_clientes`, `evaluacion_proveedores`, `evaluacion_maquinas`
-
-**Inventarios:** `inventario_productos_terminados`, `ubicacion_rack`, `historial_ubicacion`, `auditoria_inventarios`, `historial_cambios_inventario`, `alerta_stock_materiales`
-
-**Devoluciones:** `devoluciones_clientes`, `devoluciones_proveedores`
-
-**Trazabilidad:** `trazabilidad_operadores`, `trazabilidad_maquinas`, `trazabilidad_moldes`, `trazabilidad_materiales`, `trazabilidad_calidad`, `trazabilidad_embarque`, `trazabilidad_venta`, `trazabilidad_devolucion`
-
-**Bitácoras:** `bitacora_calibraciones`, `bitacora_mantenimientos`, `bitacora_produccion`, `bitacora_calidad`, `bitacora_ventas`, `bitacora_devoluciones`
-
-**Configuración:** `parametros_configuracion`, `cedes`, `turno_produccion`, `asignar_operador`, `checklist_arranque_maquina`, `checklist_cierre_maquina`
+### Sistema
+- Gestión de usuarios con roles
+- Perfil de usuario con cambio de contraseña y datos personales
+- Reportes KPI y de producción con gráficas
+- Bitácora de turno con paros de máquina
+- Incidencias de producción
+- **Auditoría**: Registro detallado de todas las acciones del sistema
+- **Exportación**: Reportes en PDF y Excel con diseño profesional
 
 ---
 
-## Rutas del Sistema
-
-### Autenticación
-| Método | Ruta | Controlador |
-|--------|------|-------------|
-| GET | `/login` | AuthController@showLogin |
-| POST | `/login` | AuthController@login |
-| GET | `/register` | AuthController@showRegister |
-| POST | `/register` | AuthController@register |
-| GET | `/logout` | AuthController@logout |
-
-### Dashboard (por rol)
-| Ruta | Admin | Supervisor | Operador | Vendedor | Cliente |
-|------|-------|------------|----------|----------|---------|
-| `/` | Dashboard admin | Dashboard supervisor | Dashboard operador | Dashboard vendedor | Panel cliente |
-
-### Módulos de producción
-| Ruta | Controlador | Acceso |
-|------|-------------|--------|
-| `/materiales` | MaterialesController | Rol 3+ |
-| `/productos` | ProductosController | Auth |
-| `/recetas` | RecetasController | Auth |
-| `/ordenes` | OrdenesController | Auth |
-| `/maquinas` | MaquinasController | Auth |
-| `/moldes` | MoldesController | Auth |
-
-### Módulos comerciales
-| Ruta | Controlador | Acceso |
-|------|-------------|--------|
-| `/clientes` | ClientesController | Rol 3+ |
-| `/proveedores` | ProveedoresController | Rol 3+ |
-| `/ventas` | VentasController | Rol 3+ |
-
-### Módulos de calidad y control
-| Ruta | Controlador | Acceso |
-|------|-------------|--------|
-| `/calidad/inspecciones` | CalidadController | Rol 3+ |
-| `/calidad/rechazos` | CalidadController | Rol 3+ |
-| `/kardex` | KardexController | Rol 3+ |
-| `/incidencias` | IncidenciasController | Rol 3+ |
-| `/mantenimiento` | MantenimientoController | Rol 3+ |
-| `/mantenimiento/paros` | MantenimientoController | Rol 3+ |
-| `/notificaciones` | NotificacionesController | Rol 3+ |
-
-### Módulos de administración
-| Ruta | Controlador | Acceso |
-|------|-------------|--------|
-| `/usuarios` | UsuariosController | Admin |
-| `/reportes/kpi` | ReportesController | Rol 3+ |
-| `/reportes/produccion` | ReportesController | Rol 3+ |
-| `/profile` | ProfileController | Auth |
-
-### Portal de cliente
-| Ruta | Controlador | Acceso |
-|------|-------------|--------|
-| `/catalogo` | CatalogoController | Auth |
-| `/facturas/request/{id}` | HomeController@solicitarFactura | Cliente |
-| `/facturas/cancelar/{id}` | HomeController@cancelarFactura | Cliente |
-| `/cliente/asignar-vendedor` | HomeController@asignarVendedor | Cliente |
-
----
-
-## Funcionalidades por Dashboard
-
-### Administrador
-- 8 tarjetas de estadísticas con gradientes (materiales, productos, órdenes, clientes, proveedores, máquinas, usuarios)
-- Gráfica de barras (Chart.js) con producción planificada
-- Tabla de últimas 5 órdenes con datos completos
-- Tabla de materiales con stock bajo (resaltados en rojo)
-- Accesos rápidos a KPIs, Reportes, Calidad, Mantenimiento
-
-### Supervisor
-- 6 tarjetas de estadísticas (materiales, productos, órdenes, clientes, proveedores, máquinas)
-- Tabla de últimas 8 órdenes
-- Tabla de alertas de stock bajo
-
-### Operador
-- 3 tarjetas de estadísticas (órdenes hoy, productos, máquinas)
-- Tabla de órdenes del día con turno
-- Tabla de máquinas activas
-- Accesos rápidos (nueva orden, mis órdenes, productos, recetas)
-
-### Vendedor
-- 3 tarjetas de estadísticas (clientes, productos, ventas del mes)
-- Monto total facturado en el mes
-- Tabla de ventas recientes (10 últimas)
-- Top 5 clientes por gasto
-- Accesos directos a clientes y ventas
-
-### Cliente
-- 4 tarjetas de estadísticas (compras, total invertido, facturas solicitadas, datos del cliente)
-- Tabla de compras con botón "Solicitar Factura" en cada completada
-- Sección de solicitudes de factura con estatus (pendiente/procesada)
-- Selector de vendedor asignado
-- Datos de la cuenta (razón social, RFC, teléfono, correo, ubicación)
-
----
-
-## Características Técnicas
-
-### Framework MVC propio
-- **Router** con soporte de parámetros `{id}` en URLs
-- **Controller** base con `requireAuth()`, `requireRol()`, helpers para GET/POST params
-- **Model** con Active Record básico (`all()`, `find()`, `create()`, `update()`, `delete()`, `where()`)
-- **View** con sistema de layouts (main.php → header, sidebar, content, footer)
-
-### Frontend
-- Bootstrap 5.3 con tema oscuro personalizado
-- **DataTables 1.13** con búsqueda en vivo, ordenamiento y paginación (configurado en español)
-- **Chart.js** para gráficas en dashboard admin
-- **Bootstrap Icons** en toda la interfaz
-- **Toast notifications** con auto-cierre (4s)
-- **CSS con gradientes** en sidebar, tarjetas de estadísticas, login
-- Sidebar colapsable con secciones separadas por rol
-- Filtros por fecha en listados (partial reutilizable `filter_bar.php`)
-- **Ticket imprimible** estilo (
-) con código único de facturación
-- **Portal público de facturación** en `/factura` (sin autenticación)
-- **Panel admin de facturas** para procesar/rechazar solicitudes
-- Diseño responsive
+## Funcionalidades Técnicas Destacadas
 
 ### Seguridad
 - Contraseñas hasheadas con `password_hash()` (bcrypt)
-- Consultas parametrizadas (PDO prepared statements)
-- Autenticación por sesión
-- Control de acceso por roles (`requireRol()`)
+- Consultas parametrizadas con PDO (100% libre de inyección SQL)
+- Autenticación por sesión con regeneración de ID
+- Control de acceso granular por roles (`requireRol()`)
+- Protección CSRF con tokens criptográficos
 - Escape de salida con `safe_string()` (htmlspecialchars)
-- CSRF token disponible (`csrf_token()`, `verify_csrf()`)
+- Validación de horario laboral para operadores con acceso extraordinario
+
+### Framework MVC Propio
+- Router con soporte de parámetros `{id}` y verbos HTTP
+- Sistema de layouts con header, sidebar y footer intercambiables
+- Helpers para sesión, formato, permisos y notificaciones
+- Paginación reutilizable en todas las vistas de listado
+
+### Frontend Profesional
+- Diseño responsive con Bootstrap 5.3
+- Sidebar con glassmorphism y animaciones suaves
+- Tarjetas KPI con gradientes, sombras y micro-interacciones
+- Tablas con hover effects, estados vacíos visuales y badges de estatus
+- Toast notifications con barra de progreso y auto-dismiss
+- DataTables con búsqueda en vivo, ordenamiento y español
+- Chart.js para gráficas dinámicas (producción, OEE, tendencias, stock)
+- Loading spinner y transiciones de página
+
+### Infraestructura de Pruebas
+- TestCase base con transacciones y rollback automático
+- Pruebas funcionales que ejercitan la base de datos real
+- Pruebas unitarias para helpers, validadores y servicios
+
+---
+
+## Módulos y Rutas
+
+### Autenticación
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/login` | Iniciar sesión |
+| POST | `/login` | Validar credenciales |
+| GET | `/register` | Registro de usuario |
+| POST | `/register` | Crear cuenta |
+| GET | `/logout` | Cerrar sesión |
+| GET | `/olvide-contrasena` | Solicitar recuperación de contraseña |
+| POST | `/olvide-contrasena` | Enviar correo de recuperación |
+| GET | `/restablecer-contrasena/{token}` | Formulario de nueva contraseña |
+| POST | `/restablecer-contrasena` | Guardar nueva contraseña |
+
+### Dashboard
+| Ruta | Rol |
+|---|---|
+| `/` | Dashboard según rol autenticado |
+| `/operador/dashboard` | Dashboard específico para operadores |
+
+### Producción
+| Ruta | Descripción |
+|---|---|
+| `/materiales` | CRUD de materias primas |
+| `/productos` | CRUD de productos terminados |
+| `/recetas` | CRUD de recetas de producción |
+| `/ordenes` | CRUD de órdenes de producción |
+| `/maquinas` | CRUD de máquinas de inyección |
+| `/moldes` | CRUD de moldes |
+
+### CRM y Ventas
+| Ruta | Descripción |
+|---|---|
+| `/clientes` | CRUD de clientes |
+| `/proveedores` | CRUD de proveedores |
+| `/ventas` | CRUD de ventas |
+| `/pipeline` | Pipeline Kanban de oportunidades |
+| `/oportunidades` | CRUD de oportunidades comerciales |
+| `/comisiones` | Gestión de comisiones |
+| `/mensajes` | Mensajería interna |
+
+### Portal de Cliente
+| Ruta | Descripción |
+|---|---|
+| `/catalogo` | Catálogo público de productos |
+| `/carrito` | Carrito de compras |
+| `/mis-pedidos` | Historial de pedidos |
+| `/mis-compras` | Historial de compras |
+| `/cartera` | Cartera/wallet digital |
+| `/tickets` | Tickets de soporte |
+| `/wishlist` | Lista de favoritos |
+
+### Contabilidad (44 rutas)
+| Ruta | Descripción |
+|---|---|
+| `/contabilidad` | Dashboard contable |
+| `/contabilidad/plan-cuentas` | Catálogo de cuentas |
+| `/contabilidad/polizas` | Pólizas contables |
+| `/contabilidad/periodos` | Periodos contables |
+| `/contabilidad/balance-general` | Balance General |
+| `/contabilidad/estado-resultados` | Estado de Resultados |
+| `/contabilidad/balanza` | Balanza de comprobación |
+| `/contabilidad/flujo-efectivo` | Flujo de Efectivo |
+| `/contabilidad/presupuestos` | Presupuestos |
+| `/contabilidad/cierres` | Cierre contable |
+
+### Sistema
+| Ruta | Descripción |
+|---|---|
+| `/admin/logs` | Visor de auditoría del sistema |
+| `/admin/horarios` | Gestión de horarios de operadores |
+| `/usuarios` | CRUD de usuarios |
+| `/profile` | Perfil y configuración personal |
+| `/reportes/kpi` | KPIs de producción |
+| `/reportes/produccion` | Reportes de producción |
+| `/incidencias` | Incidencias de producción |
+| `/calidad/inspecciones` | Inspecciones de calidad |
+
+---
+
+## Estructura de la Base de Datos
+
+El sistema cuenta con **140+ tablas** organizadas en módulos:
+
+| Módulo | Tablas principales |
+|---|---|
+| **Producción** | materiales, productos, recetas_cabecera/detalle, ordenes_cabecera, ordenes_merma, seguimiento_ordenes, maquinas, moldes |
+| **Calidad** | inspecciones_calidad, rechazos_calidad, parametros_calidad, pruebas_laboratorio |
+| **CRM** | clientes, oportunidades, actividades, interacciones, mensajes |
+| **Ventas** | ventas, comisiones, tickets, cotizaciones |
+| **Inventarios** | kardex_materiales, inventario_productos_terminados, alertas_stock |
+| **Compras** | proveedores, ordenes_compra, cotizaciones_proveedores |
+| **Contabilidad** | plan_cuentas, polizas, periodos_contables, cuentas_por_cobrar/pagar, presupuestos |
+| **Mantenimiento** | mantenimientos_maquinas, plan_mantenimiento, bitacora_paros, refacciones |
+| **Portal** | carrito_compras, pedidos, tickets_soporte, wishlist, cartera, direcciones_envio |
+| **Sistema** | usuarios, roles, empleados, audit_log, password_resets, horarios_operador, notificaciones |
+| **Trazabilidad** | trazabilidad_operadores, maquinas, moldes, materiales, calidad, embarque, venta |
 
 ---
 
 ## Mantenimiento
 
 ### Agregar un nuevo módulo
-1. Crear migración SQL para las tablas necesarias
+1. Crear migración en `database/migrations/`
 2. Crear el Modelo en `app/Models/`
-3. Crear el Controlador en `app/Controllers/`
-4. Agregar rutas en `app/config/routes.php`
-5. Crear vistas en `app/views/<modulo>/`
-6. Agregar permisos en `puede_acceder()` en `app/helpers/funciones.php`
-7. Agregar enlace en `app/views/layouts/sidebar.php`
-8. Ejecutar `find . -name "*.php" -not -path './vendor/*' -exec php -l {} \;` para verificar sintaxis
+3. Crear el Repositorio/Servicio en `app/Repositories/` o `app/Services/`
+4. Crear el Controlador en `app/Http/Controllers/<Modulo>/`
+5. Agregar rutas en `routes/<modulo>.php`
+6. Crear vistas en `resources/views/<modulo>/`
+7. Registrar permisos en `puede_acceder()` en `app/Helpers/funciones.php`
+8. Agregar enlace en sidebar (`resources/views/layouts/sidebar.php`)
+9. Ejecutar `composer run lint` para verificar sintaxis
+10. Ejecutar `vendor/bin/phpunit` para verificar que no haya regresión
 
-### Agregar un nuevo rol
-1. Insertar en tabla `roles`
-2. Agregar `case` en `requireRol()` en `app/Core/Controller.php`
-3. Agregar permisos en `puede_acceder()` en `app/helpers/funciones.php`
-4. Agregar función helper (`es_nuevorol()`)
-5. Agregar dashboard en `HomeController` y vista en `app/views/home/`
+### Comandos útiles
+```bash
+# Verificar sintaxis de todos los archivos PHP
+composer run lint
+
+# Ejecutar pruebas
+vendor/bin/phpunit
+
+# Cargar datos demo
+php seed.php
+
+# Servidor de desarrollo
+php -S localhost:8000 -t public/ public/router.php
+```
 
 ---
 
-## Notas de Desarrollo
+## Licencia
 
-- Servidor: `php -S localhost:8000 -t public`
-- PHP 8.3 requiere extensión `php8.3-mysql`
-- Las sesiones se almacenan en `/var/lib/php/sessions` (requiere sticky bit)
-- Después de modificar archivos PHP el servidor debe reiniciarse
-- Los filtros por fecha usan GET params y se procesan en el controlador
-- DataTables se auto-inicializa en tablas con clase `datatable`; usar clase `no-sort` en columnas sin ordenamiento
-- Los flash messages se serializan como JSON via `set_flash()` y JS los procesa como toasts
+Proyecto desarrollado para concurso tecnológico. Todos los derechos reservados.

@@ -11,3 +11,16 @@
 #9 /home/axel-michael/Documentos/plasti_frus/plasti_frus/public/index.php(12): App\Core\Router->dispatch()
 #10 {main}
 
+[2026-05-21 22:57:19] SQLSTATE[42S22]: Column not found: 1054 Unknown column 'p.imagen_url' in 'SELECT' in /home/axel-michael/Documentos/plasti_frus/plasti_frus/app/Core/Database.php:47
+#0 /home/axel-michael/Documentos/plasti_frus/plasti_frus/app/Core/Database.php(47): PDO->prepare()
+#1 /home/axel-michael/Documentos/plasti_frus/plasti_frus/app/Core/Database.php(54): App\Core\Database->query()
+#2 /home/axel-michael/Documentos/plasti_frus/plasti_frus/app/Core/Model.php(99): App\Core\Database->fetchAll()
+#3 /home/axel-michael/Documentos/plasti_frus/plasti_frus/app/Models/Wishlist.php(13): App\Core\Model->fetchAll()
+#4 /home/axel-michael/Documentos/plasti_frus/plasti_frus/app/Http/Controllers/Portal/WishlistController.php(25): App\Models\Wishlist->getByCliente()
+#5 [internal function]: App\Http\Controllers\Portal\WishlistController->index()
+#6 /home/axel-michael/Documentos/plasti_frus/plasti_frus/app/Core/Router.php(133): call_user_func_array()
+#7 /home/axel-michael/Documentos/plasti_frus/plasti_frus/app/Core/Router.php(86): App\Core\Router->executeAction()
+#8 /home/axel-michael/Documentos/plasti_frus/plasti_frus/app/Core/Router.php(54): App\Core\Router->handleDispatch()
+#9 /home/axel-michael/Documentos/plasti_frus/plasti_frus/public/index.php(12): App\Core\Router->dispatch()
+#10 {main}
+
