@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Production;
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Repositories\MaterialRepository;
 use App\Models\Material;
 use App\Models\Proveedor;
@@ -22,9 +23,13 @@ class MaterialesController extends Controller
     public function index(): void
     {
         requireRolMultiple([1, 2, 3]);
+        $db = Database::getInstance();
+        $query = "SELECT m.*, p.razon_social as proveedor FROM materiales m LEFT JOIN proveedores p ON m.id_proveedor = p.id_proveedor ORDER BY m.id_material DESC";
+        $pagination = paginate($db, $query, [], 15);
         $data = [
-            'materiales' => $this->materialModel->getWithProveedor(),
+            'materiales' => $pagination->items,
             'pageTitle' => 'Materiales',
+            'pagination' => $pagination,
         ];
         $this->view('materiales/index', $data);
     }
@@ -52,7 +57,8 @@ class MaterialesController extends Controller
             'punto_reorden_kg' => $this->postParam('punto_reorden_kg') ?: 0,
             'lote_recepcion' => $this->postParam('lote_recepcion'),
         ];
-        $this->materialRepo->create($data);
+        $id = $this->materialRepo->create($data);
+        \App\Services\AuditService::log('INSERT', 'Material', $id, "Material creado: {$data['nombre']}");
         set_flash('success', 'Material creado correctamente');
         $this->redirect('/materiales');
     }
@@ -87,6 +93,7 @@ class MaterialesController extends Controller
             'lote_recepcion' => $this->postParam('lote_recepcion'),
         ];
         $this->materialRepo->update($params['id'], $data);
+        \App\Services\AuditService::log('UPDATE', 'Material', $params['id'], "Material actualizado: {$data['nombre']}");
         set_flash('success', 'Material actualizado correctamente');
         $this->redirect('/materiales');
     }
@@ -99,6 +106,7 @@ class MaterialesController extends Controller
             $this->redirect('/materiales');
         }
         $this->materialRepo->delete((int) $params['id']);
+        \App\Services\AuditService::log('DELETE', 'Material', $params['id'], 'Material eliminado');
         set_flash('success', 'Material eliminado correctamente');
         $this->redirect('/materiales');
     }

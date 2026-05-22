@@ -33,11 +33,17 @@ class AuthController extends Controller
         if (isset($_SESSION['user_id'])) {
             $this->redirect('/');
         }
+        csrf_token();
         $this->view('auth/login');
     }
 
     public function login(): void
     {
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            $_SESSION['error'] = 'Token de seguridad inválido. Intente nuevamente.';
+            $this->redirect('/login');
+        }
+
         try {
             $request = new LoginRequest($_POST);
             $validated = $request->validate();
@@ -62,6 +68,7 @@ class AuthController extends Controller
             }
         }
 
+        \App\Services\AuditService::log('LOGIN', 'Usuario', $user['id_usuario'], "Inicio de sesi&oacute;n: {$validated['nombre_usuario']}");
         set_flash('success', 'Bienvenido al sistema');
         $this->redirect('/');
     }
@@ -78,6 +85,11 @@ class AuthController extends Controller
 
     public function register(): void
     {
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            $_SESSION['error'] = 'Token de seguridad inválido. Intente nuevamente.';
+            $this->redirect('/register');
+        }
+
         $nombre = $this->input('nombre');
         $apellido = $this->input('apellido');
         $username = $this->input('nombre_usuario');
@@ -152,7 +164,9 @@ class AuthController extends Controller
 
     public function logout(): void
     {
+        $userId = $_SESSION['user_id'] ?? null;
         $this->authService->logout();
+        \App\Services\AuditService::log('LOGOUT', 'Usuario', $userId, 'Cierre de sesi&oacute;n');
         $this->redirect('/login');
     }
 }

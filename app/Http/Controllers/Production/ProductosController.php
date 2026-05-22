@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Production;
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Repositories\ProductoRepository;
 use App\Models\Producto;
 
@@ -25,9 +26,12 @@ class ProductosController extends Controller
     public function index(): void
     {
         $this->checkAccess();
+        $db = Database::getInstance();
+        $pagination = paginate($db, "SELECT * FROM productos ORDER BY id_producto DESC", [], 15);
         $data = [
-            'productos' => $this->productoRepo->allWithRelations(),
+            'productos' => $pagination->items,
             'pageTitle' => 'Productos',
+            'pagination' => $pagination,
             'puedeEliminar' => puedeEliminar(),
         ];
         $this->view('productos/index', $data);
@@ -61,6 +65,7 @@ class ProductosController extends Controller
         ];
         $id = $this->productoRepo->create($data);
         registrar_log('crear', 'producto', $id, $data['nombre']);
+        \App\Services\AuditService::log('INSERT', 'Producto', $id, "Producto creado: {$data['nombre']}");
         set_flash('success', 'Producto creado correctamente');
         $this->redirect('/productos');
     }
@@ -113,6 +118,7 @@ class ProductosController extends Controller
         ];
         $this->productoRepo->update($params['id'], $data);
         registrar_log('actualizar', 'producto', $params['id'], $data['nombre']);
+        \App\Services\AuditService::log('UPDATE', 'Producto', $params['id'], "Producto actualizado: {$data['nombre']}");
         set_flash('success', 'Producto actualizado correctamente');
         $this->redirect('/productos');
     }
@@ -130,6 +136,7 @@ class ProductosController extends Controller
         }
         $this->productoRepo->delete((int) $params['id']);
         registrar_log('eliminar', 'producto', $params['id'], 'Producto eliminado');
+        \App\Services\AuditService::log('DELETE', 'Producto', $params['id'], 'Producto eliminado');
         set_flash('success', 'Producto eliminado correctamente');
         $this->redirect('/productos');
     }

@@ -3,6 +3,12 @@
     <a href="<?= url('proveedores/create') ?>" class="btn btn-sm btn-dark"><i class="bi bi-plus-lg"></i> Nuevo Proveedor</a>
 </div>
 
+<?php if (empty($proveedores)): ?>
+<div class="alert alert-info text-center py-4">
+    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+    No hay registros disponibles.
+</div>
+<?php else: ?>
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -31,11 +37,10 @@
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if (empty($proveedores)): ?>
-                    <tr><td colspan="8" class="text-center text-muted">Sin proveedores registrados</td></tr>
-                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<?php require __DIR__ . '/../partials/pagination.php'; ?>
+<?php endif; ?>

@@ -15,6 +15,7 @@
                     <?php unset($_SESSION['error']); ?>
                 <?php endif; ?>
                 <form method="POST" action="<?= url('register') ?>" id="registerForm">
+                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Tipo de Cuenta <span class="text-danger">*</span></label>
                         <select name="tipo" class="form-select" id="tipoCuenta" required>

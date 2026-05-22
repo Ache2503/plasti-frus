@@ -73,6 +73,10 @@
             <div class="card-body">
                 <form method="POST" action="<?= url('profile/update-personal') ?>">
                     <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de usuario</label>
+                        <input type="text" name="nombre_usuario" class="form-control" value="<?= safe_string($usuario['nombre_usuario'] ?? '') ?>" pattern="[a-zA-Z0-9._-]{3,50}" title="3-50 caracteres, solo letras, números, puntos, guiones y guiones bajos">
+                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Nombre(s)</label>

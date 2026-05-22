@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Sales;
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Services\VentaService;
 use App\Repositories\VentaRepository;
 use App\Repositories\ClienteRepository;
@@ -35,9 +36,33 @@ class VentasController extends Controller
     public function index(): void
     {
         $this->checkAccess();
+        $db = Database::getInstance();
+        $params = [];
+        $where = '';
+        if (es_vendedor()) {
+            $uid = (int) $_SESSION['user_id'];
+            $where = 'WHERE (v.id_vendedor = :vendedor OR c.id_vendedor = :vendedor2)';
+            $params['vendedor'] = $uid;
+            $params['vendedor2'] = $uid;
+        }
+        $query = "
+            SELECT v.*, c.razon_social as cliente, p.nombre as producto_nombre,
+                   t.folio_unico, t.id_ticket,
+                   CONCAT(e.nombre, ' ', e.apellido_paterno) as vendedor_nombre
+            FROM ventas v
+            LEFT JOIN clientes c ON v.id_cliente = c.id_cliente
+            LEFT JOIN productos p ON v.id_producto = p.id_producto
+            LEFT JOIN tickets t ON t.id_venta = v.id_venta
+            LEFT JOIN usuarios u ON v.id_vendedor = u.id_usuario
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
+            {$where}
+            ORDER BY v.id_venta DESC
+        ";
+        $pagination = paginate($db, $query, $params, 15);
         $this->view('ventas/index', [
-            'ventas' => $this->ventaService->getAll(),
+            'ventas' => $pagination->items,
             'pageTitle' => 'Ventas',
+            'pagination' => $pagination,
         ]);
     }
 

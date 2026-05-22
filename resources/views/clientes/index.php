@@ -33,6 +33,12 @@
     </div>
 </div>
 
+<?php if (empty($clientes)): ?>
+<div class="alert alert-info text-center py-4">
+    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+    No hay registros disponibles.
+</div>
+<?php else: ?>
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -86,33 +92,13 @@
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if (empty($clientes)): ?>
-                    <tr><td colspan="9" class="text-center text-muted">Sin clientes registrados</td></tr>
-                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
-    <?php if ($totalPages > 1): ?>
-    <div class="card-footer">
-        <nav>
-            <ul class="pagination pagination-sm mb-0 justify-content-center">
-                <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= url('clientes?page=' . ($currentPage - 1) . (!empty($search) ? '&search=' . urlencode($search) : '')) ?>">Anterior</a>
-                </li>
-                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
-                    <a class="page-link" href="<?= url('clientes?page=' . $i . (!empty($search) ? '&search=' . urlencode($search) : '')) ?>"><?= $i ?></a>
-                </li>
-                <?php endfor; ?>
-                <li class="page-item <?= $currentPage >= $totalPages ? 'disabled' : '' ?>">
-                    <a class="page-link" href="<?= url('clientes?page=' . ($currentPage + 1) . (!empty($search) ? '&search=' . urlencode($search) : '')) ?>">Siguiente</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-    <?php endif; ?>
+    <?php require __DIR__ . '/../partials/pagination.php'; ?>
 </div>
+<?php endif; ?>
 
 <!-- Modal Historial de Interacciones -->
 <div class="modal fade" id="historialModal" tabindex="-1">

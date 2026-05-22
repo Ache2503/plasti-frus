@@ -5,6 +5,12 @@
     </a>
 </div>
 
+<?php if (empty($productos)): ?>
+<div class="alert alert-info text-center py-4">
+    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+    No hay registros disponibles.
+</div>
+<?php else: ?>
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -41,11 +47,10 @@
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if (empty($productos)): ?>
-                    <tr><td colspan="8" class="text-center text-muted">Sin productos registrados</td></tr>
-                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<?php require __DIR__ . '/../partials/pagination.php'; ?>
+<?php endif; ?>

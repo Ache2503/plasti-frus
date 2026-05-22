@@ -63,6 +63,12 @@ $filterExtra .= '
 include __DIR__ . '/../partials/filter_bar.php';
 ?>
 
+<?php if (empty($ordenes)): ?>
+<div class="alert alert-info text-center py-4">
+    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+    No hay registros disponibles.
+</div>
+<?php else: ?>
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -100,11 +106,10 @@ include __DIR__ . '/../partials/filter_bar.php';
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if (empty($ordenes)): ?>
-                    <tr><td colspan="9" class="text-center text-muted">Sin órdenes registradas</td></tr>
-                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<?php require __DIR__ . '/../partials/pagination.php'; ?>
+<?php endif; ?>

@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Production;
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Models\Maquina;
 
 class MaquinasController extends Controller
@@ -22,9 +23,12 @@ class MaquinasController extends Controller
     public function index(): void
     {
         $this->checkAccess();
+        $db = Database::getInstance();
+        $pagination = paginate($db, "SELECT * FROM maquinas ORDER BY id_maquina DESC", [], 15);
         $data = [
-            'maquinas' => $this->maquinaModel->all(),
+            'maquinas' => $pagination->items,
             'pageTitle' => 'Máquinas',
+            'pagination' => $pagination,
             'puedeEliminar' => puedeEliminar(),
         ];
         $this->view('maquinas/index', $data);

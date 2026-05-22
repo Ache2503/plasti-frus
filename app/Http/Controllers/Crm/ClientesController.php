@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Core\Controller;
+use App\Core\Pagination;
 use App\Models\Cliente;
 use App\Repositories\ClienteRepository;
 use App\Repositories\VentaRepository;
@@ -57,13 +58,13 @@ class ClientesController extends Controller
         $search = trim($this->getParam('search', ''));
         $perPage = 15;
         $result = $this->clienteModel->search($search, $page, $perPage);
+        $pagination = new Pagination($result['data'], $result['total'], $result['page'], $result['perPage']);
         $data = [
             'clientes' => $result['data'],
             'pageTitle' => 'Clientes',
-            'currentPage' => $result['page'],
-            'totalPages' => $result['totalPages'],
             'total' => $result['total'],
             'search' => $search,
+            'pagination' => $pagination,
         ];
         $this->view('clientes/index', $data);
     }
@@ -116,6 +117,7 @@ class ClientesController extends Controller
         }
         $id = $this->clienteRepository->create($data);
         registrar_log('crear', 'cliente', $id, $data['razon_social']);
+        \App\Services\AuditService::log('INSERT', 'Cliente', $id, "Cliente creado: {$data['razon_social']}");
         set_flash('success', 'Cliente creado correctamente');
         $this->redirect('/clientes');
     }
@@ -171,6 +173,7 @@ class ClientesController extends Controller
         }
         $this->clienteRepository->update($params['id'], $data);
         registrar_log('actualizar', 'cliente', $params['id'], $data['razon_social']);
+        \App\Services\AuditService::log('UPDATE', 'Cliente', $params['id'], "Cliente actualizado: {$data['razon_social']}");
         set_flash('success', 'Cliente actualizado correctamente');
         $this->redirect('/clientes');
     }
@@ -205,6 +208,7 @@ class ClientesController extends Controller
         $razon = $cliente['razon_social'] ?? 'desconocido';
         $this->clienteModel->delete($params['id']);
         registrar_log('eliminar', 'cliente', $params['id'], $razon);
+        \App\Services\AuditService::log('DELETE', 'Cliente', $params['id'], "Cliente eliminado: {$razon}");
         set_flash('success', 'Cliente eliminado correctamente');
         $this->redirect('/clientes');
     }
@@ -292,13 +296,13 @@ class ClientesController extends Controller
             ", ['cliente' => $cliente['id_cliente'], 'vendedor' => $userId]);
             $cliente['ultima_interaccion'] = $ultima;
         }
+        $pagination = new Pagination($result['data'], $result['total'], $result['page'], $result['perPage']);
         $data = [
             'clientes' => $clientes,
             'pageTitle' => 'Mis Clientes',
-            'currentPage' => $result['page'],
-            'totalPages' => $result['totalPages'],
             'total' => $result['total'],
             'search' => $search,
+            'pagination' => $pagination,
         ];
         $this->view('clientes/index', $data);
     }

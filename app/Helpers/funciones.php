@@ -86,6 +86,13 @@ function set_flash(string $type, string $message): void
     $_SESSION['flash'] = ['type' => $type, 'message' => $message];
 }
 
+function redirect_back(): void
+{
+    $referer = $_SERVER['HTTP_REFERER'] ?? '/';
+    header("Location: {$referer}");
+    exit;
+}
+
 function is_active(string $path): string
 {
     $uri = $_SERVER['REQUEST_URI'] ?? '';
@@ -383,4 +390,14 @@ function puede_acceder(string $modulo): bool
     ];
     $rol = user_rol();
     return isset($accesos[$rol]) && in_array($modulo, $accesos[$rol]);
+}
+
+function paginate(\App\Core\Database $db, string $baseQuery, array $params = [], int $perPage = 20, string $countField = '*'): \App\Core\Pagination
+{
+    $page = max(1, (int)($_GET['page'] ?? 1));
+    $countQuery = preg_replace('/SELECT .*? FROM/i', "SELECT COUNT({$countField}) as total FROM", $baseQuery, 1);
+    $total = (int)($db->fetchOne($countQuery, $params)['total'] ?? 0);
+    $offset = ($page - 1) * $perPage;
+    $items = $db->fetchAll($baseQuery . " LIMIT {$perPage} OFFSET {$offset}", $params);
+    return new \App\Core\Pagination($items, $total, $page, $perPage);
 }

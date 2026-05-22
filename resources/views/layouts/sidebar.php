@@ -415,6 +415,11 @@
                     <i class="bi bi-clock"></i> <span>Horarios</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link <?= is_active('/admin/logs') ?>" href="<?= url('admin/logs') ?>">
+                    <i class="bi bi-clipboard-data"></i> <span>Auditor&iacute;a</span>
+                </a>
+            </li>
             <?php endif; ?>
             <?php if (puede_acceder('usuarios')): ?>
             <li class="nav-item">

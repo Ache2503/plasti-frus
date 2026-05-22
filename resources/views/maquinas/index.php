@@ -3,6 +3,12 @@
     <a href="<?= url('maquinas/create') ?>" class="btn btn-sm btn-dark"><i class="bi bi-plus-lg"></i> Nueva Máquina</a>
 </div>
 
+<?php if (empty($maquinas)): ?>
+<div class="alert alert-info text-center py-4">
+    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+    No hay registros disponibles.
+</div>
+<?php else: ?>
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -27,11 +33,10 @@
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                    <?php if (empty($maquinas)): ?>
-                    <tr><td colspan="6" class="text-center text-muted">Sin máquinas registradas</td></tr>
-                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<?php require __DIR__ . '/../partials/pagination.php'; ?>
+<?php endif; ?>

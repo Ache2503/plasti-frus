@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Production;
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Services\OrdenService;
 use App\Models\Producto;
 use App\Models\RecetaCabe;
@@ -45,12 +46,54 @@ class OrdenesController extends Controller
             'id_producto' => $this->getParam('id_producto'),
         ];
         $filters = array_filter($filters, fn($v) => $v !== null && $v !== '');
+
+        $db = Database::getInstance();
+        $query = "
+            SELECT oc.*, 
+                   p.nombre as producto_nombre, p.codigo as producto_codigo,
+                   m.nombre as maquina_nombre,
+                   md.nombre_molde as molde_nombre,
+                   rc.version as receta_version
+            FROM ordenes_cabecera oc
+            LEFT JOIN productos p ON oc.id_producto = p.id_producto
+            LEFT JOIN maquinas m ON oc.id_maquina = m.id_maquina
+            LEFT JOIN moldes md ON oc.id_molde = md.id_molde
+            LEFT JOIN recetas_cabecera rc ON oc.id_receta = rc.id_receta_cabe
+        ";
+        $params = [];
+        $where = [];
+
+        if (!empty($filters['fecha_desde'])) {
+            $where[] = "oc.fecha >= :fecha_desde";
+            $params['fecha_desde'] = $filters['fecha_desde'];
+        }
+        if (!empty($filters['fecha_hasta'])) {
+            $where[] = "oc.fecha <= :fecha_hasta";
+            $params['fecha_hasta'] = $filters['fecha_hasta'] . ' 23:59:59';
+        }
+        if (!empty($filters['turno'])) {
+            $where[] = "oc.turno = :turno";
+            $params['turno'] = $filters['turno'];
+        }
+        if (!empty($filters['id_producto'])) {
+            $where[] = "oc.id_producto = :id_producto";
+            $params['id_producto'] = $filters['id_producto'];
+        }
+
+        if (!empty($where)) {
+            $query .= ' WHERE ' . implode(' AND ', $where);
+        }
+        $query .= ' ORDER BY oc.id_orden_cabe DESC';
+
+        $pagination = paginate($db, $query, $params, 15);
+
         $data = [
-            'ordenes' => $this->ordenService->getAll($filters),
+            'ordenes' => $pagination->items,
             'stats' => $this->ordenService->getStats(),
             'productos' => $this->productoModel->all(),
             'pageTitle' => 'Órdenes de Producción',
             'filters' => $filters,
+            'pagination' => $pagination,
             'puedeEliminar' => puedeEliminar(),
         ];
         $this->view('ordenes/index', $data);
@@ -81,7 +124,8 @@ class OrdenesController extends Controller
             'cantidad_real_buenas' => $this->postParam('cantidad_real_buenas') ?: null,
             'estatus' => 'pendiente',
         ]);
-        $this->ordenService->create($data);
+        $id = $this->ordenService->create($data);
+        \App\Services\AuditService::log('INSERT', 'Orden', $id, "Orden #{$id} creada");
         set_flash('success', 'Orden de producción creada correctamente');
         $this->redirect('/ordenes');
     }
@@ -115,6 +159,7 @@ class OrdenesController extends Controller
             $this->redirect('/ordenes');
         }
         $this->ordenService->delete((int) $params['id']);
+        \App\Services\AuditService::log('DELETE', 'Orden', $params['id'], 'Orden eliminada');
         set_flash('success', 'Orden eliminada correctamente');
         $this->redirect('/ordenes');
     }
@@ -124,6 +169,7 @@ class OrdenesController extends Controller
         $this->checkAccess();
         try {
             $this->ordenService->start($params['id']);
+            \App\Services\AuditService::log('UPDATE', 'Orden', $params['id'], 'Orden iniciada');
             set_flash('success', 'Orden iniciada correctamente');
         } catch (\RuntimeException $e) {
             set_flash('error', $e->getMessage());
@@ -143,6 +189,7 @@ class OrdenesController extends Controller
             'observaciones' => $this->postParam('observaciones') ?: '',
         ];
         $this->ordenService->complete($id, $data);
+        \App\Services\AuditService::log('UPDATE', 'Orden', $id, "Orden completada, buenas: {$data['buenas']}");
         set_flash('success', 'Orden completada correctamente');
         $redirect = $this->postParam('redirect_to') ?: '/ordenes/detalle/' . $id;
         $this->redirect($redirect);

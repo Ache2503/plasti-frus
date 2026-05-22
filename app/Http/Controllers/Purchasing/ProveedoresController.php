@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Purchasing;
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Models\Proveedor;
 use App\Repositories\ProveedorRepository;
 
@@ -19,9 +20,12 @@ class ProveedoresController extends Controller
     public function index(): void
     {
         $this->requireAuth(); requireRolMultiple([1, 3, 6]);
+        $db = Database::getInstance();
+        $pagination = paginate($db, "SELECT * FROM proveedores ORDER BY id_proveedor DESC", [], 15);
         $data = [
-            'proveedores' => $this->proveedorRepository->all(),
+            'proveedores' => $pagination->items,
             'pageTitle' => 'Proveedores',
+            'pagination' => $pagination,
         ];
         $this->view('proveedores/index', $data);
     }
@@ -51,7 +55,8 @@ class ProveedoresController extends Controller
             'sector' => $this->postParam('sector'),
             'estatus' => $this->postParam('estatus') ?: 'activo',
         ];
-        $this->proveedorRepository->create($data);
+        $id = $this->proveedorRepository->create($data);
+        \App\Services\AuditService::log('INSERT', 'Proveedor', $id, "Proveedor creado: {$data['razon_social']}");
         set_flash('success', 'Proveedor creado correctamente');
         $this->redirect('/proveedores');
     }
@@ -87,6 +92,7 @@ class ProveedoresController extends Controller
             'estatus' => $this->postParam('estatus') ?: 'activo',
         ];
         $this->proveedorRepository->update($params['id'], $data);
+        \App\Services\AuditService::log('UPDATE', 'Proveedor', $params['id'], "Proveedor actualizado: {$data['razon_social']}");
         set_flash('success', 'Proveedor actualizado correctamente');
         $this->redirect('/proveedores');
     }
@@ -99,6 +105,7 @@ class ProveedoresController extends Controller
             $this->redirect('/proveedores');
         }
         $this->proveedorRepository->delete((int) $params['id']);
+        \App\Services\AuditService::log('DELETE', 'Proveedor', $params['id'], 'Proveedor eliminado');
         set_flash('success', 'Proveedor eliminado correctamente');
         $this->redirect('/proveedores');
     }

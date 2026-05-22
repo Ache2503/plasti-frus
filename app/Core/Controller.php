@@ -105,6 +105,15 @@ class Controller
         }
     }
 
+    protected function validateCsrf(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf($this->postParam('csrf_token'))) {
+            $_SESSION['error'] = 'Token de seguridad inválido. Intente nuevamente.';
+            redirect_back();
+            exit;
+        }
+    }
+
     public function applyMiddleware(string $middleware, array $params = []): void
     {
         $middlewareClass = "App\\Http\\Middleware\\{$middleware}Middleware";

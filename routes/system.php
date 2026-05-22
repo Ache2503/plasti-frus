@@ -39,3 +39,6 @@ $router->post('/incidencias/delete/{id}', 'System\IncidenciasController@delete')
 // Bitácora de turno
 $router->get('/bitacora', 'System\ShiftLogController@index');
 $router->post('/bitacora', 'System\ShiftLogController@store');
+
+// Auditoría
+$router->get('/admin/logs', 'System\AuditLogsController@index');

@@ -15,6 +15,7 @@
                     <?php unset($_SESSION['error']); ?>
                 <?php endif; ?>
                 <form method="POST" action="<?= url('login') ?>">
+                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Usuario</label>
                         <div class="input-group">
@@ -33,9 +34,10 @@
                         <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar Sesión
                     </button>
                 </form>
-                <div class="text-center mt-3">
-                    <small class="text-muted">¿No tienes cuenta? <a href="<?= url('register') ?>" class="fw-semibold">Regístrate</a></small>
-                </div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <small class="text-muted"><a href="<?= url('olvide-contrasena') ?>" class="text-decoration-none">¿Olvidaste tu contraseña?</a></small>
+                        <small class="text-muted">¿No tienes cuenta? <a href="<?= url('register') ?>" class="fw-semibold">Regístrate</a></small>
+                    </div>
             </div>
         </div>
 
