@@ -2,7 +2,7 @@
     <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="<?= url() ?>">
         <i class="bi bi-gear-fill"></i> <strong>Plasti Frus</strong>
     </a>
-    <button class="navbar-toggler position-absolute d-md-none collapsed border-0" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+    <button class="navbar-toggler position-absolute d-md-none collapsed border-0" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" id="sidebarToggle">
         <span class="navbar-toggler-icon"></span>
     </button>
     <div class="w-100"></div>

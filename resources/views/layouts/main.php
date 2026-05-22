@@ -10,6 +10,7 @@
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link href="<?= asset('css/main.css') ?>" rel="stylesheet">
     <link href="<?= asset('css/dashboard.css') ?>" rel="stylesheet">
+    <link href="<?= asset('css/enhanced.css') ?>" rel="stylesheet">
 </head>
 <body>
     <?php if (isset($_SESSION['user_id'])): ?>
@@ -42,7 +43,7 @@
                         <?php endforeach; ?>
                     </nav>
                     <?php endif; ?>
-                    <div class="py-3">
+                    <div class="py-3 page-transition">
                         <?php require $content; ?>
                     </div>
                 </main>

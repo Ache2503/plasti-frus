@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->safeLoad();
+
 define('APP_URL', 'http://localhost');
 define('APP_NAME', 'Plasti Frus - Test');
 define('APP_TIMEZONE', 'America/Mexico_City');
