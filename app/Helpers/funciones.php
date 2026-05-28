@@ -89,6 +89,11 @@ function set_flash(string $type, string $message): void
 function redirect_back(): void
 {
     $referer = $_SERVER['HTTP_REFERER'] ?? '/';
+    $refererHost = parse_url($referer, PHP_URL_HOST);
+    $currentHost = $_SERVER['HTTP_HOST'] ?? null;
+    if ($refererHost !== null && $currentHost !== null && strcasecmp($refererHost, $currentHost) !== 0) {
+        $referer = '/';
+    }
     header("Location: {$referer}");
     exit;
 }

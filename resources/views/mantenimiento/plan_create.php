@@ -42,7 +42,12 @@
         </div>
         <div class="col-md-3 mb-3">
             <label class="form-label">Técnico Responsable</label>
-            <input type="text" name="tecnico_responsable" class="form-control">
+            <select name="id_tecnico_responsable" class="form-select">
+                <option value="">Sin asignar</option>
+                <?php foreach ($tecnicos as $tecnico): ?>
+                <option value="<?= $tecnico['id_usuario'] ?>"><?= safe_string($tecnico['nombre_completo']) ?><?= !empty($tecnico['rol']) ? ' - ' . safe_string($tecnico['rol']) : '' ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
     </div>
     <button type="submit" class="btn btn-dark"><i class="bi bi-save"></i> Programar</button>

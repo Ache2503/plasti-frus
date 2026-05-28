@@ -12,7 +12,13 @@
         }
         var toast = document.createElement('div');
         toast.className = 'custom-toast toast-' + type;
-        toast.innerHTML = '<i class="bi ' + (icons[type] || icons.info) + '"></i> <span>' + message + '</span>';
+        var icon = document.createElement('i');
+        icon.className = 'bi ' + (icons[type] || icons.info);
+        var text = document.createElement('span');
+        text.textContent = message;
+        toast.appendChild(icon);
+        toast.appendChild(document.createTextNode(' '));
+        toast.appendChild(text);
         container.appendChild(toast);
         setTimeout(function() {
             toast.style.animation = 'fadeOut .3s ease forwards';
@@ -125,6 +131,9 @@ document.addEventListener('submit', function(e) {
         e.preventDefault();
         var btn = form.querySelector('[type="submit"]');
         if (btn) {
+            if (!btn.getAttribute('data-original-text')) {
+                btn.setAttribute('data-original-text', btn.innerHTML);
+            }
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Procesando...';
         }
@@ -134,7 +143,13 @@ document.addEventListener('submit', function(e) {
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            var contentType = res.headers.get('content-type') || '';
+            if (contentType.indexOf('application/json') === -1) {
+                throw new Error('Respuesta no JSON');
+            }
+            return res.json();
+        })
         .then(function(data) {
             if (data.success) {
                 showToast(data.message || 'Operación exitosa', 'success');

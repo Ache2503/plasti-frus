@@ -46,6 +46,14 @@ class MaquinasController extends Controller
     public function store(): void
     {
         $this->checkAccess();
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/maquinas/create');
+        }
+        if (!$this->postParam('nombre')) {
+            set_flash('error', 'El nombre de la máquina es obligatorio');
+            $this->redirect('/maquinas/create');
+        }
         $data = [
             'nombre' => $this->postParam('nombre'),
             'modelo' => $this->postParam('modelo'),
@@ -76,6 +84,14 @@ class MaquinasController extends Controller
     public function update(array $params): void
     {
         $this->checkAccess();
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/maquinas');
+        }
+        if (!$this->postParam('nombre')) {
+            set_flash('error', 'El nombre de la máquina es obligatorio');
+            $this->redirect('/maquinas/edit/' . $params['id']);
+        }
         $data = [
             'nombre' => $this->postParam('nombre'),
             'modelo' => $this->postParam('modelo'),
@@ -109,7 +125,16 @@ class MaquinasController extends Controller
     {
         $this->checkAccess();
         $db = \App\Core\Database::getInstance();
-        $seccion = $this->getParam('seccion');
+        $hasEstado = $db->columnExists('maquinas', 'estado');
+        $hasSeccion = $db->columnExists('maquinas', 'seccion');
+        $hasOrdenEstatus = $db->columnExists('ordenes_cabecera', 'estatus');
+
+        $estadoColumn = $hasEstado ? 'm.estado' : "'apagada'";
+        $ordenesPendientesWhere = $hasOrdenEstatus
+            ? "o.estatus IS NULL OR o.estatus = 'pendiente'"
+            : "o.cantidad_real_buenas IS NULL OR o.cantidad_real_buenas = 0";
+
+        $seccion = $hasSeccion ? $this->getParam('seccion') : null;
         $where = '';
         $params = [];
         if ($seccion) {
@@ -118,16 +143,18 @@ class MaquinasController extends Controller
         }
         $maquinas = $db->fetchAll("
             SELECT m.*,
-                   CASE WHEN bp.id_bitacora IS NOT NULL THEN 'detenida' ELSE COALESCE(m.estado, 'apagada') END as estado_real,
+                   CASE WHEN bp.id_bitacora IS NOT NULL THEN 'detenida' ELSE COALESCE({$estadoColumn}, 'apagada') END as estado_real,
                    bp.motivo_paro, bp.hora_inicio as paro_desde,
-                   (SELECT COUNT(*) FROM ordenes_cabecera o WHERE o.id_maquina = m.id_maquina AND (o.estatus IS NULL OR o.estatus = 'pendiente')) as ordenes_pendientes,
+                   (SELECT COUNT(*) FROM ordenes_cabecera o WHERE o.id_maquina = m.id_maquina AND ({$ordenesPendientesWhere})) as ordenes_pendientes,
                    (SELECT MAX(o.fecha) FROM ordenes_cabecera o WHERE o.id_maquina = m.id_maquina AND o.cantidad_real_buenas IS NOT NULL) as ultima_orden
             FROM maquinas m
             LEFT JOIN bitacora_paros bp ON bp.id_maquina = m.id_maquina AND bp.hora_fin IS NULL
             {$where}
             ORDER BY m.nombre
         ", $params);
-        $secciones = $db->fetchAll("SELECT DISTINCT seccion FROM maquinas WHERE seccion IS NOT NULL AND seccion != '' ORDER BY seccion");
+        $secciones = $hasSeccion
+            ? $db->fetchAll("SELECT DISTINCT seccion FROM maquinas WHERE seccion IS NOT NULL AND seccion != '' ORDER BY seccion")
+            : [];
         $data = [
             'maquinas' => $maquinas,
             'secciones' => array_column($secciones, 'seccion'),
@@ -143,11 +170,19 @@ class MaquinasController extends Controller
     {
         $this->checkAccess();
         $db = \App\Core\Database::getInstance();
+        $hasEstado = $db->columnExists('maquinas', 'estado');
+        $hasOrdenEstatus = $db->columnExists('ordenes_cabecera', 'estatus');
+        $estadoColumn = $hasEstado ? 'm.estado' : "'apagada'";
+        $estadoSelect = $hasEstado ? 'm.estado' : "'apagada' as estado";
+        $ordenesActivasWhere = $hasOrdenEstatus
+            ? "o.estatus IS NULL OR o.estatus IN ('pendiente','en_progreso')"
+            : "o.cantidad_real_buenas IS NULL OR o.cantidad_real_buenas = 0";
+
         $maquinas = $db->fetchAll("
-            SELECT m.id_maquina, m.nombre, m.estado,
-                   CASE WHEN bp.id_bitacora IS NOT NULL THEN 'detenida' ELSE COALESCE(m.estado, 'apagada') END as estado_real,
+            SELECT m.id_maquina, m.nombre, {$estadoSelect},
+                   CASE WHEN bp.id_bitacora IS NOT NULL THEN 'detenida' ELSE COALESCE({$estadoColumn}, 'apagada') END as estado_real,
                    bp.motivo_paro, bp.hora_inicio as paro_desde,
-                   (SELECT COUNT(*) FROM ordenes_cabecera o WHERE o.id_maquina = m.id_maquina AND (o.estatus IS NULL OR o.estatus IN ('pendiente','en_progreso'))) as ordenes_activas
+                   (SELECT COUNT(*) FROM ordenes_cabecera o WHERE o.id_maquina = m.id_maquina AND ({$ordenesActivasWhere})) as ordenes_activas
             FROM maquinas m
             LEFT JOIN bitacora_paros bp ON bp.id_maquina = m.id_maquina AND bp.hora_fin IS NULL
             ORDER BY m.nombre

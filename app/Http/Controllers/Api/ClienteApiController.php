@@ -19,7 +19,13 @@ class ClienteApiController extends BaseApiController
 
     public function show(array $params): void
     {
-        $cliente = $this->clienteRepository->findWithVendedor((int) $params['id']);
+        $id = $this->positiveId($params);
+        if ($id === null) {
+            $this->error('ID de cliente inválido', 422);
+            return;
+        }
+
+        $cliente = $this->clienteRepository->findWithVendedor($id);
         if (!$cliente) {
             $this->error('Cliente no encontrado', 404);
             return;

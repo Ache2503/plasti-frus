@@ -45,8 +45,9 @@ class KardexService
                 $cantidad = -$cantidad;
             }
 
-            $nuevoStock = $material['stock_actual'] + $cantidad;
-            $this->db->update('materiales', ['stock_actual' => $nuevoStock], 'id_material = :id', ['id' => $data['id_material']]);
+            $stockColumn = $this->db->columnExists('materiales', 'stock_actual_kg') ? 'stock_actual_kg' : 'stock_actual';
+            $nuevoStock = (float) ($material[$stockColumn] ?? 0) + $cantidad;
+            $this->db->update('materiales', [$stockColumn => $nuevoStock], 'id_material = :id', ['id' => $data['id_material']]);
 
             $this->db->commit();
             return $id;

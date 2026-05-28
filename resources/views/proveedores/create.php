@@ -6,6 +6,7 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <form method="POST" action="<?= url('proveedores/store') ?>">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Razón Social <span class="text-danger">*</span></label>

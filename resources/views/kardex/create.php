@@ -31,7 +31,12 @@
         </div>
         <div class="col-md-2 mb-3">
             <label class="form-label">Operador <span class="text-danger">*</span></label>
-            <input type="text" name="operador" class="form-control" required>
+            <select name="id_operador" class="form-select" required>
+                <option value="">Seleccionar</option>
+                <?php foreach ($operadores as $operador): ?>
+                <option value="<?= $operador['id_usuario'] ?>"><?= safe_string($operador['nombre_completo']) ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
     </div>
     <button type="submit" class="btn btn-dark"><i class="bi bi-save"></i> Registrar</button>

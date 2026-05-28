@@ -19,7 +19,13 @@ class VentaApiController extends BaseApiController
 
     public function show(array $params): void
     {
-        $venta = $this->ventaRepository->find((int) $params['id']);
+        $id = $this->positiveId($params);
+        if ($id === null) {
+            $this->error('ID de venta inválido', 422);
+            return;
+        }
+
+        $venta = $this->ventaRepository->find($id);
         if (!$venta) {
             $this->error('Venta no encontrada', 404);
             return;

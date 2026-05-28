@@ -43,6 +43,18 @@ class ProveedoresController extends Controller
     public function store(): void
     {
         $this->requireAuth(); requireRolMultiple([1, 3, 6]);
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/proveedores/create');
+        }
+        if (!$this->postParam('razon_social')) {
+            set_flash('error', 'La razón social es obligatoria');
+            $this->redirect('/proveedores/create');
+        }
+        if ($this->postParam('correo') && !filter_var($this->postParam('correo'), FILTER_VALIDATE_EMAIL)) {
+            set_flash('error', 'El correo del proveedor no es válido');
+            $this->redirect('/proveedores/create');
+        }
         $data = [
             'razon_social' => $this->postParam('razon_social'),
             'rfc' => $this->postParam('rfc'),
@@ -79,6 +91,18 @@ class ProveedoresController extends Controller
     public function update(array $params): void
     {
         $this->requireAuth(); requireRolMultiple([1, 3, 6]);
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/proveedores');
+        }
+        if (!$this->postParam('razon_social')) {
+            set_flash('error', 'La razón social es obligatoria');
+            $this->redirect('/proveedores/edit/' . $params['id']);
+        }
+        if ($this->postParam('correo') && !filter_var($this->postParam('correo'), FILTER_VALIDATE_EMAIL)) {
+            set_flash('error', 'El correo del proveedor no es válido');
+            $this->redirect('/proveedores/edit/' . $params['id']);
+        }
         $data = [
             'razon_social' => $this->postParam('razon_social'),
             'rfc' => $this->postParam('rfc'),

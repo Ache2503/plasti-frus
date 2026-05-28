@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Services\KardexService;
 use App\Repositories\MaterialRepository;
 
@@ -9,11 +10,13 @@ class KardexController extends Controller
 {
     private KardexService $kardexService;
     private MaterialRepository $materialRepository;
+    private Database $db;
 
     public function __construct()
     {
         $this->kardexService = new KardexService();
         $this->materialRepository = new MaterialRepository();
+        $this->db = Database::getInstance();
     }
 
     public function index(): void
@@ -40,6 +43,7 @@ class KardexController extends Controller
         $this->requireRol(3);
         $data = [
             'materiales' => $this->materialRepository->all(),
+            'operadores' => $this->getOperadores(),
             'pageTitle' => 'Agregar Movimiento',
         ];
         $this->view('kardex/create', $data);
@@ -55,22 +59,32 @@ class KardexController extends Controller
             set_flash('error', 'Material no encontrado');
             $this->redirect('/kardex/create');
         }
+        $operador = $this->findUsuario((int) $this->postParam('id_operador'));
+        if (!$operador) {
+            set_flash('error', 'Operador no válido');
+            $this->redirect('/kardex/create');
+        }
 
-        $this->kardexService->create([
+        $data = [
             'id_material' => $idMaterial,
             'fecha' => $this->postParam('fecha'),
             'movimiento' => $this->postParam('movimiento'),
             'cantidad' => (float) ($this->postParam('cantidad') ?: 0),
-            'operador' => $this->postParam('operador'),
-        ]);
+            'operador' => $operador['nombre_completo'],
+        ];
+        if ($this->db->columnExists('kardex_materiales', 'id_operador')) {
+            $data['id_operador'] = $operador['id_usuario'];
+        }
+        $this->kardexService->create($data);
 
         set_flash('success', 'Movimiento registrado correctamente');
         $this->redirect('/kardex');
     }
 
-    public function detalle($id): void
+    public function detalle(array $params): void
     {
         $this->requireRol(3);
+        $id = (int) ($params['id'] ?? 0);
         $material = $this->materialRepository->find($id);
         if (!$material) {
             set_flash('error', 'Material no encontrado');
@@ -78,9 +92,32 @@ class KardexController extends Controller
         }
         $data = [
             'material' => $material,
-            'movimientos' => $this->kardexService->getByMaterial((int) $id),
+            'movimientos' => $this->kardexService->getByMaterial($id),
             'pageTitle' => 'Kardex: ' . $material['nombre'],
         ];
         $this->view('kardex/detalle', $data);
+    }
+
+    private function getOperadores(): array
+    {
+        return $this->db->fetchAll("
+            SELECT u.id_usuario,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario) as nombre_completo
+            FROM usuarios u
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
+            WHERE u.activo = 1 AND u.id_rol = 2
+            ORDER BY nombre_completo
+        ");
+    }
+
+    private function findUsuario(int $id): ?array
+    {
+        return $this->db->fetchOne("
+            SELECT u.id_usuario,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario) as nombre_completo
+            FROM usuarios u
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
+            WHERE u.id_usuario = :id AND u.activo = 1
+        ", ['id' => $id]) ?: null;
     }
 }

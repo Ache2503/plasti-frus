@@ -34,7 +34,12 @@
     <div class="row">
         <div class="col-md-4 mb-3">
             <label class="form-label">Técnico Responsable <span class="text-danger">*</span></label>
-            <input type="text" name="tecnico_responsable" class="form-control" required>
+            <select name="id_tecnico_responsable" class="form-select" required>
+                <option value="">Seleccionar</option>
+                <?php foreach ($tecnicos as $tecnico): ?>
+                <option value="<?= $tecnico['id_usuario'] ?>"><?= safe_string($tecnico['nombre_completo']) ?><?= !empty($tecnico['rol']) ? ' - ' . safe_string($tecnico['rol']) : '' ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
         <div class="col-md-3 mb-3">
             <label class="form-label">Resultado <span class="text-danger">*</span></label>

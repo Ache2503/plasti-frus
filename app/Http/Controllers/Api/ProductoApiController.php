@@ -19,7 +19,13 @@ class ProductoApiController extends BaseApiController
 
     public function show(array $params): void
     {
-        $producto = $this->productoRepository->findWithRelations((int) $params['id']);
+        $id = $this->positiveId($params);
+        if ($id === null) {
+            $this->error('ID de producto inválido', 422);
+            return;
+        }
+
+        $producto = $this->productoRepository->findWithRelations($id);
         if (!$producto) {
             $this->error('Producto no encontrado', 404);
             return;

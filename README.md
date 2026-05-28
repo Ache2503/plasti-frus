@@ -26,7 +26,10 @@ cd /var/www/plasti_frus
 composer install
 
 # 2. Configurar base de datos
-# Ejecutar el esquema SQL completo (database/schema.sql) y migraciones en database/migrations/
+# Ejecutar el esquema SQL completo y migraciones/correcciones necesarias
+mysql -u root -p < database/schema.sql
+php bin/plasti migrate
+mysql -u root -p fabrica_plasticos < database/corrections_2026_05_27_audit_phase2.sql
 
 # 3. Configurar entorno
 cp .env.example .env
@@ -61,7 +64,7 @@ php -S localhost:8000 -t public/ public/router.php
 ## Ejecutar Pruebas
 
 ```bash
-# Todas las pruebas (63 tests, 127 assertions)
+# Todas las pruebas
 vendor/bin/phpunit
 
 # Solo pruebas unitarias

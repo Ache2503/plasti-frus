@@ -102,4 +102,24 @@ class Database
     {
         $this->pdo->rollBack();
     }
+
+    public function tableExists(string $table): bool
+    {
+        $sql = "SELECT COUNT(*) as total
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table";
+        $row = $this->fetchOne($sql, ['table' => $table]);
+        return (int) ($row['total'] ?? 0) > 0;
+    }
+
+    public function columnExists(string $table, string $column): bool
+    {
+        $sql = "SELECT COUNT(*) as total
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = :table
+                  AND COLUMN_NAME = :column";
+        $row = $this->fetchOne($sql, ['table' => $table, 'column' => $column]);
+        return (int) ($row['total'] ?? 0) > 0;
+    }
 }

@@ -7,7 +7,7 @@ class CsrfMiddleware
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
 
-        $token = $_POST['_csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $token = $_POST['csrf_token'] ?? $_POST['_csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
         if (empty($token) || !isset($_SESSION['_csrf_token'])) {
             $this->reject();
         }

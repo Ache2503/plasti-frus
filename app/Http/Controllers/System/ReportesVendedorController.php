@@ -105,19 +105,19 @@ class ReportesVendedorController extends Controller
         return [$title, $headers, $rows];
     }
 
-    public function exportExcel(string $tipo = ''): void
+    public function exportExcel(array $params = []): void
     {
         $this->checkAccess();
-        $tipo = $tipo ?: $this->getParam('tipo', 'productos');
+        $tipo = $params['tipo'] ?? $this->getParam('tipo', 'productos');
         [$title, $headers, $rows] = $this->buildExportData($tipo);
         $service = new \App\Services\ExportService($title, $headers, $rows);
         $service->excel();
     }
 
-    public function exportPDF(string $tipo = ''): void
+    public function exportPDF(array $params = []): void
     {
         $this->checkAccess();
-        $tipo = $tipo ?: $this->getParam('tipo', 'productos');
+        $tipo = $params['tipo'] ?? $this->getParam('tipo', 'productos');
         [$title, $headers, $rows] = $this->buildExportData($tipo);
         $service = new \App\Services\ExportService($title, $headers, $rows);
         $service->pdf();

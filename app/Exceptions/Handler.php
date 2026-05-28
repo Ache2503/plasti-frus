@@ -6,6 +6,12 @@ class Handler
     public static function handle(\Throwable $e): void
     {
         if ($e instanceof ValidationException) {
+            if (self::expectsJson()) {
+                http_response_code(422);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => $e->getFirstError()]);
+                exit;
+            }
             set_flash('error', $e->getFirstError());
             $back = $_SERVER['HTTP_REFERER'] ?? '/';
             header("Location: {$back}");
@@ -14,9 +20,9 @@ class Handler
 
         if ($e instanceof NotFoundException) {
             http_response_code(404);
-            if (self::isAjax()) {
+            if (self::expectsJson()) {
                 header('Content-Type: application/json');
-                echo json_encode(['error' => $e->getMessage()]);
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
                 exit;
             }
             require VIEWS_PATH . '/errors/404.php';
@@ -31,14 +37,14 @@ class Handler
 
         self::logError($e);
 
-        if (defined('APP_DEBUG') && APP_DEBUG) {
+        if (defined('APP_DEBUG') && APP_DEBUG && !self::expectsJson()) {
             throw $e;
         }
 
         http_response_code(500);
-        if (self::isAjax()) {
+        if (self::expectsJson()) {
             header('Content-Type: application/json');
-            echo json_encode(['error' => 'Error interno del servidor']);
+            echo json_encode(['success' => false, 'error' => 'Error interno del servidor']);
             exit;
         }
         require VIEWS_PATH . '/errors/500.php';
@@ -66,6 +72,16 @@ class Handler
     {
         return !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
             && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    }
+
+    private static function expectsJson(): bool
+    {
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+
+        return str_starts_with($path, '/api/')
+            || self::isAjax()
+            || str_contains(strtolower($accept), 'application/json');
     }
 
     public static function register(): void

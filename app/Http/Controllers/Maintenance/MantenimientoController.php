@@ -36,6 +36,7 @@ class MantenimientoController extends Controller
         $this->requireRol(3);
         $data = [
             'maquinas' => $this->getMaquinas(),
+            'tecnicos' => $this->getUsuariosOperativos([1, 2, 3]),
             'pageTitle' => 'Registrar Mantenimiento',
         ];
         $this->view('mantenimiento/create', $data);
@@ -49,15 +50,24 @@ class MantenimientoController extends Controller
             set_flash('error', 'Máquina no encontrada');
             $this->redirect('/mantenimiento/create');
         }
+        $tecnico = $this->findUsuario((int) $this->postParam('id_tecnico_responsable'));
+        if (!$tecnico) {
+            set_flash('error', 'Técnico responsable no válido');
+            $this->redirect('/mantenimiento/create');
+        }
 
-        $this->db->insert('mantenimientos_maquinas', [
+        $data = [
             'id_maquina' => $this->postParam('id_maquina'),
             'fecha_mantenimiento' => $this->postParam('fecha_mantenimiento'),
             'tipo_mantenimiento' => $this->postParam('tipo_mantenimiento'),
-            'tecnico_responsable' => $this->postParam('tecnico_responsable'),
+            'tecnico_responsable' => $tecnico['nombre_completo'],
             'horas_paro' => $this->postParam('horas_paro') ?: 0,
             'resultado' => $this->postParam('resultado'),
-        ]);
+        ];
+        if ($this->db->columnExists('mantenimientos_maquinas', 'id_tecnico_responsable')) {
+            $data['id_tecnico_responsable'] = $tecnico['id_usuario'];
+        }
+        $this->db->insert('mantenimientos_maquinas', $data);
 
         $this->updateMaquinaEstatus($this->postParam('id_maquina'), $this->postParam('resultado') === 'completado' ? 'activo' : 'mantenimiento');
 
@@ -70,6 +80,7 @@ class MantenimientoController extends Controller
         $this->requireRol(3);
         $data = [
             'maquinas' => $this->getMaquinas(),
+            'tecnicos' => $this->getUsuariosOperativos([1, 2, 3]),
             'pageTitle' => 'Plan de Mantenimiento',
         ];
         $this->view('mantenimiento/plan_create', $data);
@@ -78,16 +89,29 @@ class MantenimientoController extends Controller
     public function planStore(): void
     {
         $this->requireRol(3);
-        $this->db->insert('plan_mantenimiento', [
+        $tecnico = null;
+        if ($this->postParam('id_tecnico_responsable')) {
+            $tecnico = $this->findUsuario((int) $this->postParam('id_tecnico_responsable'));
+            if (!$tecnico) {
+                set_flash('error', 'Técnico responsable no válido');
+                $this->redirect('/mantenimiento/plan');
+            }
+        }
+
+        $data = [
             'id_maquina' => $this->postParam('id_maquina'),
             'fecha_programada' => $this->postParam('fecha_programada'),
             'tipo_mantenimiento' => $this->postParam('tipo_mantenimiento'),
             'descripcion' => $this->postParam('descripcion'),
             'frecuencia_horas' => $this->postParam('frecuencia_horas') ?: null,
             'ultimo_mantenimiento' => $this->postParam('ultimo_mantenimiento') ?: null,
-            'tecnico_responsable' => $this->postParam('tecnico_responsable'),
+            'tecnico_responsable' => $tecnico['nombre_completo'] ?? null,
             'estatus' => 'pendiente',
-        ]);
+        ];
+        if ($this->db->columnExists('plan_mantenimiento', 'id_tecnico_responsable')) {
+            $data['id_tecnico_responsable'] = $tecnico['id_usuario'] ?? null;
+        }
+        $this->db->insert('plan_mantenimiento', $data);
         set_flash('success', 'Actividad de mantenimiento programada');
         $this->redirect('/mantenimiento');
     }
@@ -113,6 +137,7 @@ class MantenimientoController extends Controller
         $this->requireRol(3);
         $data = [
             'maquinas' => $this->getMaquinas(),
+            'operadores' => $this->getUsuariosOperativos([2]),
             'pageTitle' => 'Registrar Paro',
         ];
         $this->view('mantenimiento/paro_create', $data);
@@ -127,17 +152,29 @@ class MantenimientoController extends Controller
         if ($horaInicio && $horaFin) {
             $duracion = (strtotime($horaFin) - strtotime($horaInicio)) / 3600;
         }
+        $operador = null;
+        if ($this->postParam('id_operador')) {
+            $operador = $this->findUsuario((int) $this->postParam('id_operador'));
+            if (!$operador) {
+                set_flash('error', 'Operador no válido');
+                $this->redirect('/mantenimiento/paros/create');
+            }
+        }
 
-        $this->db->insert('bitacora_paros', [
+        $data = [
             'id_maquina' => $this->postParam('id_maquina'),
             'fecha' => $this->postParam('fecha'),
             'hora_inicio' => $horaInicio,
             'hora_fin' => $horaFin ?: null,
             'duracion_paro' => $duracion,
             'motivo_paro' => $this->postParam('motivo_paro'),
-            'operador' => $this->postParam('operador'),
+            'operador' => $operador['nombre_completo'] ?? null,
             'estatus' => $horaFin ? 'resuelto' : 'activo',
-        ]);
+        ];
+        if ($this->db->columnExists('bitacora_paros', 'id_operador')) {
+            $data['id_operador'] = $operador['id_usuario'] ?? null;
+        }
+        $this->db->insert('bitacora_paros', $data);
         set_flash('success', 'Paro registrado correctamente');
         $this->redirect('/mantenimiento/paros');
     }
@@ -222,6 +259,39 @@ class MantenimientoController extends Controller
     private function updateMaquinaEstatus($id, string $estatus): int
     {
         return $this->db->update('maquinas', ['estatus' => $estatus], 'id_maquina = :id', ['id' => $id]);
+    }
+
+    private function getUsuariosOperativos(array $roles): array
+    {
+        $placeholders = [];
+        $params = [];
+        foreach ($roles as $i => $rol) {
+            $key = 'rol' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $rol;
+        }
+
+        return $this->db->fetchAll("
+            SELECT u.id_usuario,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario) as nombre_completo,
+                   r.nombre as rol
+            FROM usuarios u
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
+            LEFT JOIN roles r ON u.id_rol = r.id_rol
+            WHERE u.activo = 1 AND u.id_rol IN (" . implode(',', $placeholders) . ")
+            ORDER BY nombre_completo
+        ", $params);
+    }
+
+    private function findUsuario(int $id): ?array
+    {
+        return $this->db->fetchOne("
+            SELECT u.id_usuario,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario) as nombre_completo
+            FROM usuarios u
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
+            WHERE u.id_usuario = :id AND u.activo = 1
+        ", ['id' => $id]) ?: null;
     }
 
     private function getParos(array $filters = []): array

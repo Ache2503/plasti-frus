@@ -26,9 +26,14 @@
             <label class="form-label">Hora Fin</label>
             <input type="time" name="hora_fin" class="form-control">
         </div>
-        <div class="col-md-1 mb-3">
+        <div class="col-md-3 mb-3">
             <label class="form-label">Operador</label>
-            <input type="text" name="operador" class="form-control">
+            <select name="id_operador" class="form-select">
+                <option value="">Sin asignar</option>
+                <?php foreach ($operadores as $operador): ?>
+                <option value="<?= $operador['id_usuario'] ?>"><?= safe_string($operador['nombre_completo']) ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
     </div>
     <div class="row">

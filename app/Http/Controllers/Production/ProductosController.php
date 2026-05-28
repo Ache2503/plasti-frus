@@ -52,6 +52,18 @@ class ProductosController extends Controller
     public function store(): void
     {
         $this->checkAccess();
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/productos/create');
+        }
+        if (!$this->postParam('codigo') || !$this->postParam('nombre')) {
+            set_flash('error', 'Código y nombre son obligatorios');
+            $this->redirect('/productos/create');
+        }
+        if ((float) ($this->postParam('peso_unitario_grs') ?: 0) < 0) {
+            set_flash('error', 'El peso unitario no puede ser negativo');
+            $this->redirect('/productos/create');
+        }
         $data = [
             'codigo' => $this->postParam('codigo'),
             'nombre' => $this->postParam('nombre'),
@@ -105,6 +117,18 @@ class ProductosController extends Controller
     public function update(array $params): void
     {
         $this->checkAccess();
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/productos');
+        }
+        if (!$this->postParam('codigo') || !$this->postParam('nombre')) {
+            set_flash('error', 'Código y nombre son obligatorios');
+            $this->redirect('/productos/edit/' . $params['id']);
+        }
+        if ((float) ($this->postParam('peso_unitario_grs') ?: 0) < 0) {
+            set_flash('error', 'El peso unitario no puede ser negativo');
+            $this->redirect('/productos/edit/' . $params['id']);
+        }
         $data = [
             'codigo' => $this->postParam('codigo'),
             'nombre' => $this->postParam('nombre'),

@@ -14,4 +14,10 @@ class BaseApiController extends Controller
     {
         $this->json(['success' => false, 'error' => $message], $status);
     }
+
+    protected function positiveId(array $params): ?int
+    {
+        $id = (int) ($params['id'] ?? 0);
+        return $id > 0 ? $id : null;
+    }
 }

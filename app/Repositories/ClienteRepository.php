@@ -42,7 +42,7 @@ class ClienteRepository extends BaseRepository
     {
         return $this->db->fetchAll("
             SELECT * FROM clientes
-            WHERE razon_social LIKE :term OR rfc LIKE :term2 OR email LIKE :term3
+            WHERE razon_social LIKE :term OR rfc LIKE :term2 OR correo LIKE :term3
             ORDER BY razon_social LIMIT 20
         ", [
             'term' => "%{$term}%",

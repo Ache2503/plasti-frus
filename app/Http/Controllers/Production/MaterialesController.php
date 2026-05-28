@@ -47,6 +47,18 @@ class MaterialesController extends Controller
     public function store(): void
     {
         $this->requireRol(3);
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/materiales/create');
+        }
+        if (!$this->postParam('nombre') || !$this->postParam('tipo')) {
+            set_flash('error', 'Nombre y tipo son obligatorios');
+            $this->redirect('/materiales/create');
+        }
+        if ((float) ($this->postParam('stock_actual_kg') ?: 0) < 0 || (float) ($this->postParam('punto_reorden_kg') ?: 0) < 0) {
+            set_flash('error', 'El stock y punto de reorden no pueden ser negativos');
+            $this->redirect('/materiales/create');
+        }
         $data = [
             'id_proveedor' => $this->postParam('id_proveedor') ?: null,
             'tipo' => $this->postParam('tipo'),
@@ -82,6 +94,18 @@ class MaterialesController extends Controller
     public function update(array $params): void
     {
         $this->requireRol(3);
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/materiales');
+        }
+        if (!$this->postParam('nombre') || !$this->postParam('tipo')) {
+            set_flash('error', 'Nombre y tipo son obligatorios');
+            $this->redirect('/materiales/edit/' . $params['id']);
+        }
+        if ((float) ($this->postParam('stock_actual_kg') ?: 0) < 0 || (float) ($this->postParam('punto_reorden_kg') ?: 0) < 0) {
+            set_flash('error', 'El stock y punto de reorden no pueden ser negativos');
+            $this->redirect('/materiales/edit/' . $params['id']);
+        }
         $data = [
             'id_proveedor' => $this->postParam('id_proveedor') ?: null,
             'tipo' => $this->postParam('tipo'),

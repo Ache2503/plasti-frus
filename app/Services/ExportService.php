@@ -8,6 +8,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class ExportService
 {
@@ -56,7 +57,7 @@ class ExportService
 
         $col = 1;
         foreach ($this->headers as $header) {
-            $sheet->setCellValueByColumnAndRow($col, 1, $header);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($col) . '1', $header);
             $col++;
         }
         $sheet->getStyle('A1:' . $sheet->getHighestColumn() . '1')->applyFromArray($headerStyle);
@@ -65,7 +66,7 @@ class ExportService
         foreach ($this->rows as $row) {
             $col = 1;
             foreach ($row as $value) {
-                $cell = $sheet->getCellByColumnAndRow($col, $rowNum);
+                $cell = $sheet->getCell(Coordinate::stringFromColumnIndex($col) . $rowNum);
                 $cell->setValue($value);
                 $col++;
             }
