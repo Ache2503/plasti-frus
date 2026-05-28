@@ -90,7 +90,7 @@
                     <?php if (es_cliente()): ?>
                     <form method="POST" action="<?= url('wishlist/agregar/' . $prod['id_producto']) ?>" class="wishlist-form">
                         <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                        <button type="submit" class="btn btn-sm btn-link p-0 wishlist-btn" title="<?= in_array($prod['id_producto'], $wishlist_ids ?? []) ? 'Quitar de favoritos' : 'Agregar a favoritos' ?>">
+                        <button type="submit" class="btn btn-sm btn-link p-0 wishlist-btn" data-producto-id="<?= $prod['id_producto'] ?>" title="<?= in_array($prod['id_producto'], $wishlist_ids ?? []) ? 'Quitar de favoritos' : 'Agregar a favoritos' ?>">
                             <i class="bi bi-heart<?= in_array($prod['id_producto'], $wishlist_ids ?? []) ? '-fill text-danger' : '' ?> fs-5"></i>
                         </button>
                     </form>
@@ -174,4 +174,44 @@
     </ul>
 </nav>
 <?php endif; ?>
+<?php endif; ?>
+
+<?php if (es_cliente()): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.wishlist-form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = form.querySelector('.wishlist-btn');
+            var icon = btn.querySelector('i');
+            var csrf = form.querySelector('[name="csrf_token"]').value;
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'csrf_token=' + encodeURIComponent(csrf)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    if (data.agregado) {
+                        icon.className = 'bi bi-heart-fill text-danger fs-5';
+                        btn.title = 'Quitar de favoritos';
+                    } else {
+                        icon.className = 'bi bi-heart fs-5';
+                        btn.title = 'Agregar a favoritos';
+                    }
+                    var badge = document.querySelector('.wishlist-count-badge');
+                    if (badge) badge.textContent = data.count;
+                }
+            })
+            .catch(function() {
+                if (typeof showToast !== 'undefined') {
+                    showToast('Error al actualizar favoritos', 'error');
+                }
+            });
+        });
+    });
+});
+</script>
 <?php endif; ?>

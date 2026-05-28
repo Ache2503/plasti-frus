@@ -43,6 +43,7 @@ $router->post('/tickets/cerrar/{id}', 'Portal\TicketController@cerrar');
 $router->get('/wishlist', 'Portal\WishlistController@index');
 $router->post('/wishlist/agregar/{productoId}', 'Portal\WishlistController@toggle');
 $router->post('/wishlist/remover/{productoId}', 'Portal\WishlistController@remove');
+$router->post('/wishlist/agregar-todos', 'Portal\WishlistController@agregarTodos');
 
 // Notificaciones del cliente
 $router->get('/notificaciones-cliente', 'Portal\NotificacionController@index');

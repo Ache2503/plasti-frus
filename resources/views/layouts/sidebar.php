@@ -58,7 +58,7 @@
                 <a class="nav-link <?= is_active('/wishlist') ?>" href="<?= url('wishlist') ?>">
                     <i class="bi bi-heart"></i> <span>Favoritos</span>
                     <?php if ($wishlistCountSide > 0): ?>
-                    <span class="badge bg-danger ms-auto"><?= $wishlistCountSide ?></span>
+                    <span class="badge bg-danger ms-auto wishlist-count-badge"><?= $wishlistCountSide ?></span>
                     <?php endif; ?>
                 </a>
             </li>
@@ -190,8 +190,20 @@
 
             <?php if (puede_acceder('clientes')): ?>
             <li class="nav-item">
-                <a class="nav-link <?= is_active('/clientes') && !is_active('/mis-clientes') ?>" href="<?= url('clientes') ?>">
+                <a class="nav-link <?= is_active('/clientes') && !is_active('/mis-clientes') && !is_active('/soporte') ?>" href="<?= url('clientes') ?>">
                     <i class="bi bi-people"></i> <span>Clientes</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= is_active('/soporte') ?>" href="<?= url('soporte') ?>">
+                    <i class="bi bi-headset"></i> <span>Soporte</span>
+                    <?php
+                        $dbSop = \App\Core\Database::getInstance();
+                        $soportePendSide = (int) ($dbSop->fetchOne("SELECT COUNT(*) as c FROM tickets_soporte WHERE estatus IN ('abierto', 'respondido')")['c'] ?? 0);
+                    ?>
+                    <?php if ($soportePendSide > 0): ?>
+                    <span class="badge bg-warning ms-auto"><?= $soportePendSide ?></span>
+                    <?php endif; ?>
                 </a>
             </li>
             <?php endif; ?>

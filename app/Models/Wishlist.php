@@ -11,7 +11,7 @@ class Wishlist extends Model
     public function getByCliente(int $idCliente): array
     {
         return $this->fetchAll("
-            SELECT w.*, p.nombre, p.codigo, p.precio_venta, p.imagen_url,
+            SELECT w.*, p.nombre, p.codigo, p.precio_venta,
                    p.descripcion_comercial, p.familia, p.linea
             FROM {$this->table} w
             INNER JOIN productos p ON w.id_producto = p.id_producto
@@ -35,6 +35,14 @@ class Wishlist extends Model
             'id_producto' => $idProducto,
         ]);
         return true;
+    }
+
+    public function getAllByCliente(int $idCliente): array
+    {
+        return $this->fetchAll(
+            "SELECT id_producto FROM {$this->table} WHERE id_cliente = :id",
+            ['id' => $idCliente]
+        );
     }
 
     public function remove(int $idCliente, int $idProducto): void

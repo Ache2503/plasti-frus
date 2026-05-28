@@ -45,17 +45,27 @@
                             <i class="bi bi-check-circle-fill"></i> Ya tienes <strong><?= $cantEnCarrito ?></strong> unidad(es) en tu <a href="<?= url('carrito') ?>" class="fw-semibold">carrito</a>.
                         </div>
                         <?php endif; ?>
-                        <form method="POST" action="<?= url('carrito/agregar') ?>" class="mb-3">
-                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                            <input type="hidden" name="id_producto" value="<?= $producto['id_producto'] ?>">
-                            <input type="hidden" name="precio_unitario" value="<?= $producto['precio_venta'] ?? $producto['costo_estimado'] ?? 0 ?>">
-                            <div class="input-group" style="max-width: 260px;">
-                                <button type="button" class="btn btn-outline-secondary qty-btn" onclick="this.nextElementSibling.stepDown();this.nextElementSibling.dispatchEvent(new Event('change'))">−</button>
-                                <input type="number" name="cantidad" class="form-control text-center qty-input" value="1" min="1" max="<?= $producto['stock_actual'] ?: 999 ?>">
-                                <button type="button" class="btn btn-outline-secondary qty-btn" onclick="this.previousElementSibling.stepUp();this.previousElementSibling.dispatchEvent(new Event('change'))">+</button>
-                                <button type="submit" class="btn btn-dark px-4"><i class="bi bi-cart-plus"></i> Agregar</button>
-                            </div>
-                        </form>
+                        <div class="d-flex gap-2 mb-3">
+                            <form method="POST" action="<?= url('carrito/agregar') ?>">
+                                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                <input type="hidden" name="id_producto" value="<?= $producto['id_producto'] ?>">
+                                <input type="hidden" name="precio_unitario" value="<?= $producto['precio_venta'] ?? $producto['costo_estimado'] ?? 0 ?>">
+                                <div class="input-group" style="max-width: 260px;">
+                                    <button type="button" class="btn btn-outline-secondary qty-btn" onclick="this.nextElementSibling.stepDown();this.nextElementSibling.dispatchEvent(new Event('change'))">−</button>
+                                    <input type="number" name="cantidad" class="form-control text-center qty-input" value="1" min="1" max="<?= $producto['stock_actual'] ?: 999 ?>">
+                                    <button type="button" class="btn btn-outline-secondary qty-btn" onclick="this.previousElementSibling.stepUp();this.previousElementSibling.dispatchEvent(new Event('change'))">+</button>
+                                    <button type="submit" class="btn btn-dark px-4"><i class="bi bi-cart-plus"></i> Agregar</button>
+                                </div>
+                            </form>
+                            <?php if (es_cliente()): ?>
+                            <form method="POST" action="<?= url('wishlist/agregar/' . $producto['id_producto']) ?>" class="wishlist-form">
+                                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                <button type="submit" class="btn btn-outline-danger wishlist-btn" title="<?= $enWishlist ? 'Quitar de favoritos' : 'Agregar a favoritos' ?>">
+                                    <i class="bi bi-heart<?= $enWishlist ? '-fill' : '' ?>"></i> Favorito
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                        </div>
 
                         <div class="d-flex gap-2 flex-wrap">
                             <?php if (!empty($producto['familia'])): ?>
@@ -68,8 +78,46 @@
                             <span class="badge bg-secondary bg-opacity-10 text-secondary"><?= safe_string($producto['color']) ?></span>
                             <?php endif; ?>
                         </div>
-                    </div>
-                </div>
+    </div>
+</div>
+
+<?php if (es_cliente()): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.querySelector('.wishlist-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = form.querySelector('.wishlist-btn');
+        var icon = btn.querySelector('i');
+        var csrf = form.querySelector('[name="csrf_token"]').value;
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'csrf_token=' + encodeURIComponent(csrf)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                if (data.agregado) {
+                    icon.className = 'bi bi-heart-fill';
+                    btn.title = 'Quitar de favoritos';
+                } else {
+                    icon.className = 'bi bi-heart';
+                    btn.title = 'Agregar a favoritos';
+                }
+            }
+        })
+        .catch(function() {
+            if (typeof showToast !== 'undefined') {
+                showToast('Error al actualizar favoritos', 'error');
+            }
+        });
+    });
+});
+</script>
+<?php endif; ?>
 
                 <?php if (!empty($producto['descripcion_comercial'])): ?>
                 <hr>

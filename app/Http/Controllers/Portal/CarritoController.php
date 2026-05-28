@@ -181,6 +181,8 @@ class CarritoController extends Controller
             $this->redirect('/carrito');
         }
 
+        $_SESSION['cart_items_before'] = array_column($_SESSION['cart'], 'id_producto');
+
         $productoModel = new \App\Models\Producto();
         $ventasCreadas = 0;
         $totalPedido = 0;
@@ -255,6 +257,10 @@ class CarritoController extends Controller
 
             $this->db->commit();
             $_SESSION['cart'] = [];
+            $wlModel = new \App\Models\Wishlist();
+            foreach ($_SESSION['cart_items_before'] ?? [] as $purchasedId) {
+                $wlModel->remove($idCliente, $purchasedId);
+            }
             set_flash('success', "Pedido #{$idPedido} realizado ({$ventasCreadas} producto(s)). Folio: {$folio}. Tus productos están en estatus 'pendiente' hasta que sean procesados.");
         } catch (\Exception $e) {
             $this->db->rollback();

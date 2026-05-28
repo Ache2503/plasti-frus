@@ -34,7 +34,7 @@
     <div class="d-flex gap-2">
         <a href="<?= url('tickets/' . $ticket['folio_unico'] . '/pdf') ?>" class="btn btn-dark btn-sm"><i class="bi bi-download"></i> Descargar PDF</a>
         <button onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer"></i> Imprimir</button>
-        <button onclick="history.back()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</button>
+        <a href="<?= url('tickets') ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
     </div>
 </div>
 

@@ -135,11 +135,20 @@ class CatalogoController extends Controller
         }
 
         $carritoCount = array_sum(array_column($_SESSION['cart'] ?? [], 'cantidad'));
+        $enWishlist = false;
+        if (es_cliente()) {
+            $cid = user_id_cliente();
+            if ($cid) {
+                $wishlistModel = new \App\Models\Wishlist();
+                $enWishlist = $wishlistModel->productoEnWishlist($cid, $id);
+            }
+        }
         $data = [
             'producto' => $producto,
             'recomendados' => $recomendados,
             'carrito_count' => $carritoCount,
             'pageTitle' => $producto['nombre'],
+            'enWishlist' => $enWishlist,
         ];
         $this->view('home/producto', $data);
     }
