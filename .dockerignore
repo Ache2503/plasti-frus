@@ -1,0 +1,10 @@
+.git
+.github
+.env
+node_modules
+vendor
+storage/logs/*
+public/uploads/*
+*.log
+.DS_Store
+Thumbs.db

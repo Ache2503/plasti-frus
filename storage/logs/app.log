@@ -63,3 +63,11 @@
 #9 /home/axel-michael/Documentos/plasti_frus/plasti_frus/public/index.php(12): App\Core\Router->dispatch()
 #10 {main}
 
+[2026-05-28 20:45:14] SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'acceso_autorizado' in /var/www/html/app/Core/Database.php:48
+#0 /var/www/html/app/Core/Database.php(48): PDOStatement->execute(Array)
+#1 /var/www/html/app/Core/Migration.php(20): App\Core\Database->query('\n            AL...')
+#2 /var/www/html/database/migrations/2026_05_21_000037_add_acceso_autorizado_to_turno_produccion.php(11): App\Core\Migration->schema('\n            AL...')
+#3 /var/www/html/app/Console/Migrator.php(35): App\Database\Migrations\AddAccesoAutorizadoToTurnoProduccion->up()
+#4 /var/www/html/bin/plasti(14): App\Console\Migrator->run()
+#5 {main}
+

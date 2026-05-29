@@ -1,0 +1,58 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: plasti-frus-app
+    ports:
+      - "8000:80"
+    environment:
+      APP_NAME: "Plasti Frus"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:8000"
+      APP_TIMEZONE: "America/Mexico_City"
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: fabrica_plasticos
+      DB_USER: plastifrus
+      DB_PASS: plastifrus
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:11.4
+    container_name: plasti-frus-db
+    environment:
+      MARIADB_DATABASE: fabrica_plasticos
+      MARIADB_USER: plastifrus
+      MARIADB_PASSWORD: plastifrus
+      MARIADB_ROOT_PASSWORD: root
+    volumes:
+      - plasti_frus_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: plasti-frus-phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: plastifrus
+      PMA_PASSWORD: plastifrus
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  plasti_frus_db:

@@ -20,6 +20,18 @@
 
 ## Inicio Rápido
 
+### En Windows con Docker
+
+Para mostrar el sistema en otra PC Windows sin instalar PHP, Composer, Apache ni MariaDB manualmente, usa la guía [DOCKER_WINDOWS.md](DOCKER_WINDOWS.md).
+
+```powershell
+docker compose up -d --build
+```
+
+Luego abre `http://localhost:8000`.
+
+### Instalación local
+
 ```bash
 # 1. Clonar e instalar dependencias
 cd /var/www/plasti_frus
