@@ -58,6 +58,7 @@ class TicketController extends Controller
         $prioridad = $this->postParam('prioridad', 'media');
 
         $errors = [];
+        if (!$idCliente) $errors[] = 'Tu usuario no está vinculado a un cliente. Contacta al administrador.';
         if (empty($titulo)) $errors[] = 'El título es obligatorio';
         if (empty($descripcion)) $errors[] = 'La descripción es obligatoria';
         if (!in_array($prioridad, ['baja', 'media', 'alta', 'urgente'])) $prioridad = 'media';
@@ -70,6 +71,7 @@ class TicketController extends Controller
 
         $this->ticketModel->create([
             'id_cliente' => $idCliente,
+            'id_usuario_creador' => $_SESSION['user_id'] ?? null,
             'titulo' => $titulo,
             'descripcion' => $descripcion,
             'prioridad' => $prioridad,

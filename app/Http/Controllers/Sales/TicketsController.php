@@ -16,6 +16,11 @@ class TicketsController extends Controller
     public function show(array $params): void
     {
         $folio = $params['folio'];
+        if (ctype_digit((string) $folio) && function_exists('es_cliente') && es_cliente()) {
+            (new \App\Http\Controllers\Portal\TicketController())->show(['id' => (int) $folio]);
+            return;
+        }
+
         $ticket = $this->ticket->getByFolio($folio);
         if (!$ticket) {
             set_flash('error', 'Ticket no encontrado');
@@ -31,6 +36,11 @@ class TicketsController extends Controller
     public function pdf(array $params): void
     {
         $folio = $params['folio'];
+        if (ctype_digit((string) $folio) && function_exists('es_cliente') && es_cliente()) {
+            set_flash('error', 'El PDF corresponde a tickets de venta, no a tickets de soporte');
+            $this->redirect('/tickets/' . $folio);
+        }
+
         $ticketData = $this->ticket->getByFolio($folio);
         if (!$ticketData) {
             set_flash('error', 'Ticket no encontrado');

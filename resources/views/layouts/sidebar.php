@@ -207,6 +207,21 @@
                 </a>
             </li>
             <?php endif; ?>
+            <?php if (in_array(user_rol(), [1, 3], true)): ?>
+            <?php
+                $dbMsgStaff = \App\Core\Database::getInstance();
+                $uidMsgStaff = (int) $_SESSION['user_id'];
+                $mensajesNoLeidosStaff = (int) ($dbMsgStaff->fetchOne("SELECT COUNT(*) as c FROM mensajes WHERE para_user_id = :uid AND leido = 0", ['uid' => $uidMsgStaff])['c'] ?? 0);
+            ?>
+            <li class="nav-item">
+                <a class="nav-link <?= is_active('/mensajes') ?>" href="<?= url('mensajes') ?>">
+                    <i class="bi bi-envelope"></i> <span>Mensajes</span>
+                    <?php if ($mensajesNoLeidosStaff > 0): ?>
+                    <span class="badge bg-danger ms-auto"><?= $mensajesNoLeidosStaff ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
+            <?php endif; ?>
             <?php if (es_vendedor()): ?>
             <?php
                 $db = \App\Core\Database::getInstance();

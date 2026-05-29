@@ -30,6 +30,7 @@ class MensajeController extends Controller
             'inbox' => $this->model->inbox($userId),
             'sent' => $this->model->sent($userId),
             'no_leidos' => $this->model->noLeidos($userId),
+            'usuarios' => $this->model->getDestinatarios($userId),
             'pageTitle' => 'Mensajes',
         ];
         $this->view('vendedor/mensajes', $data);
@@ -44,17 +45,30 @@ class MensajeController extends Controller
         }
         $userId = (int) $_SESSION['user_id'];
         $paraUserId = (int) $this->postParam('para_user_id');
-        if (!$paraUserId) {
-            set_flash('error', 'Debes seleccionar un destinatario');
+        $asunto = trim($this->postParam('asunto', ''));
+        $mensaje = trim($this->postParam('mensaje', ''));
+        $destinatario = $this->model->getUsuarioActivo($paraUserId);
+        if (!$destinatario) {
+            set_flash('error', 'Debes seleccionar un destinatario válido');
+            $this->redirect('/mensajes');
+        }
+        if ($paraUserId === $userId) {
+            set_flash('error', 'No puedes enviarte mensajes a ti mismo');
+            $this->redirect('/mensajes');
+        }
+        if ($asunto === '' || $mensaje === '') {
+            set_flash('error', 'Asunto y mensaje son obligatorios');
             $this->redirect('/mensajes');
         }
         $this->model->create([
             'de_user_id' => $userId,
             'para_user_id' => $paraUserId,
-            'asunto' => $this->postParam('asunto'),
-            'mensaje' => $this->postParam('mensaje'),
+            'asunto' => $asunto,
+            'mensaje' => $mensaje,
         ]);
-        notificar_vendedor($paraUserId, 'mensaje_recibido', 'Nuevo mensaje: ' . $this->postParam('asunto'), $this->postParam('mensaje'), $userId);
+        if ((int) $destinatario['id_rol'] === ROL_VENDEDOR) {
+            notificar_vendedor($paraUserId, 'mensaje_recibido', 'Nuevo mensaje: ' . $asunto, $mensaje, $userId);
+        }
         set_flash('success', 'Mensaje enviado');
         $this->redirect('/mensajes');
     }
@@ -62,6 +76,9 @@ class MensajeController extends Controller
     public function marcarLeido(array $params): void
     {
         $this->checkAccess();
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            $this->json(['success' => false, 'error' => 'Token inválido'], 419);
+        }
         $userId = (int) $_SESSION['user_id'];
         $this->model->marcarLeido((int) $params['id'], $userId);
         $this->json(['success' => true]);
@@ -113,7 +130,10 @@ class MensajeController extends Controller
             'asunto' => 'Re: ' . $original['asunto'],
             'mensaje' => $this->postParam('mensaje'),
         ]);
-        notificar_vendedor((int) $original['de_user_id'], 'mensaje_recibido', 'Respuesta: ' . $original['asunto'], $this->postParam('mensaje'), $userId);
+        $destinatario = $this->model->getUsuarioActivo((int) $original['de_user_id']);
+        if ($destinatario && (int) $destinatario['id_rol'] === ROL_VENDEDOR) {
+            notificar_vendedor((int) $original['de_user_id'], 'mensaje_recibido', 'Respuesta: ' . $original['asunto'], $this->postParam('mensaje'), $userId);
+        }
         set_flash('success', 'Respuesta enviada');
         $this->redirect('/mensajes');
     }

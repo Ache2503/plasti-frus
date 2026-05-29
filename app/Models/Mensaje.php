@@ -51,4 +51,29 @@ class Mensaje extends Model
             'id' => $id, 'user' => $userId,
         ]);
     }
+
+    public function getDestinatarios(int $excludeUserId): array
+    {
+        return $this->fetchAll("
+            SELECT u.id_usuario, u.nombre_usuario, u.id_rol,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario) as nombre_completo,
+                   r.nombre as rol_nombre
+            FROM usuarios u
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
+            LEFT JOIN roles r ON u.id_rol = r.id_rol
+            WHERE u.activo = 1
+              AND u.id_usuario != :uid
+              AND u.id_rol IN (1, 3, 4)
+            ORDER BY r.id_rol, nombre_completo
+        ", ['uid' => $excludeUserId]);
+    }
+
+    public function getUsuarioActivo(int $idUsuario): ?array
+    {
+        return $this->fetchOne("
+            SELECT id_usuario, id_rol, nombre_usuario
+            FROM usuarios
+            WHERE id_usuario = :id AND activo = 1
+        ", ['id' => $idUsuario]) ?: null;
+    }
 }

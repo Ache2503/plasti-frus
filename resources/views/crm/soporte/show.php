@@ -51,6 +51,34 @@
     </div>
 </div>
 
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-light fw-semibold"><i class="bi bi-person-lines-fill"></i> Información del cliente que levantó el ticket</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <span class="text-muted small d-block">Usuario</span>
+                <?= safe_string($ticket['usuario_creador'] ?? 'Sin usuario registrado') ?>
+            </div>
+            <div class="col-md-3">
+                <span class="text-muted small d-block">Empresa</span>
+                <?= safe_string($ticket['cliente_razon'] ?? 'N/A') ?>
+            </div>
+            <div class="col-md-2">
+                <span class="text-muted small d-block">RFC</span>
+                <?= safe_string($ticket['cliente_rfc'] ?? 'N/A') ?>
+            </div>
+            <div class="col-md-2">
+                <span class="text-muted small d-block">Correo</span>
+                <?= safe_string($ticket['cliente_correo'] ?? 'N/A') ?>
+            </div>
+            <div class="col-md-2">
+                <span class="text-muted small d-block">Teléfono</span>
+                <?= safe_string($ticket['cliente_telefono'] ?? 'N/A') ?>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mb-3">
     <div class="col-md-12">
         <form method="POST" action="<?= url('soporte/asignar/' . $ticket['id_ticket']) ?>" class="row g-2 align-items-center">

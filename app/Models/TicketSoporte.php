@@ -22,11 +22,21 @@ class TicketSoporte extends Model
 
     public function getByCliente(int $idCliente): array
     {
+        $hasCreator = $this->db->columnExists($this->table, 'id_usuario_creador');
+        $creatorSelect = $hasCreator ? 'uc.nombre_usuario as usuario_creador,' : '';
+        $creatorJoin = $hasCreator ? 'LEFT JOIN usuarios uc ON t.id_usuario_creador = uc.id_usuario' : '';
+
         return $this->fetchAll("
             SELECT t.*, u.nombre_usuario,
+                   c.razon_social as cliente_razon,
+                   c.correo as cliente_correo,
+                   c.telefono as cliente_telefono,
+                   {$creatorSelect}
                    (SELECT COUNT(*) FROM ticket_respuestas WHERE id_ticket = t.id_ticket) as total_respuestas
             FROM {$this->table} t
             LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
+            LEFT JOIN clientes c ON t.id_cliente = c.id_cliente
+            {$creatorJoin}
             WHERE t.id_cliente = :id
             ORDER BY t.created_at DESC
         ", ['id' => $idCliente]);
@@ -40,14 +50,25 @@ class TicketSoporte extends Model
             $where .= ' AND t.id_cliente = :cliente';
             $params['cliente'] = $idCliente;
         }
+        $hasCreator = $this->db->columnExists($this->table, 'id_usuario_creador');
+        $creatorSelect = $hasCreator ? ', uc.nombre_usuario as usuario_creador' : '';
+        $creatorJoin = $hasCreator ? 'LEFT JOIN usuarios uc ON t.id_usuario_creador = uc.id_usuario' : '';
+
         $ticket = $this->fetchOne("
             SELECT t.*, u.nombre_usuario,
                    ua.nombre_usuario as usuario_asignado,
-                   c.razon_social as cliente_razon
+                   c.razon_social as cliente_razon,
+                   c.rfc as cliente_rfc,
+                   c.correo as cliente_correo,
+                   c.telefono as cliente_telefono,
+                   c.ciudad as cliente_ciudad,
+                   c.estado as cliente_estado
+                   {$creatorSelect}
             FROM {$this->table} t
             LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
             LEFT JOIN usuarios ua ON t.id_usuario_asignado = ua.id_usuario
             LEFT JOIN clientes c ON t.id_cliente = c.id_cliente
+            {$creatorJoin}
             WHERE {$where}
         ", $params);
 
@@ -67,12 +88,16 @@ class TicketSoporte extends Model
 
     public function create(array $data): int
     {
-        return $this->db->insert($this->table, [
+        $insert = [
             'id_cliente' => $data['id_cliente'],
             'titulo' => $data['titulo'],
             'descripcion' => $data['descripcion'],
             'prioridad' => $data['prioridad'] ?? 'media',
-        ]);
+        ];
+        if ($this->db->columnExists($this->table, 'id_usuario_creador')) {
+            $insert['id_usuario_creador'] = $data['id_usuario_creador'] ?? null;
+        }
+        return $this->db->insert($this->table, $insert);
     }
 
     public function addRespuesta(int $idTicket, int $idCliente, string $mensaje, ?string $archivo = null): int
@@ -118,6 +143,9 @@ class TicketSoporte extends Model
 
     public function getAll(?array $filters = []): array
     {
+        $hasCreator = $this->db->columnExists($this->table, 'id_usuario_creador');
+        $creatorSelect = $hasCreator ? 'uc.nombre_usuario as usuario_creador,' : '';
+        $creatorJoin = $hasCreator ? 'LEFT JOIN usuarios uc ON t.id_usuario_creador = uc.id_usuario' : '';
         $where = '1=1';
         $params = [];
 
@@ -141,13 +169,20 @@ class TicketSoporte extends Model
 
         return $this->fetchAll("
             SELECT t.*, c.razon_social as cliente_razon,
+                   c.rfc as cliente_rfc,
+                   c.correo as cliente_correo,
+                   c.telefono as cliente_telefono,
                    u.nombre_usuario as usuario_atendio,
                    ua.nombre_usuario as usuario_asignado,
+                   COALESCE(" . ($hasCreator ? "uc.nombre_usuario, " : "") . "cliente_user.nombre_usuario) as usuario_cliente,
+                   {$creatorSelect}
                    (SELECT COUNT(*) FROM ticket_respuestas WHERE id_ticket = t.id_ticket) as total_respuestas
             FROM {$this->table} t
             LEFT JOIN clientes c ON t.id_cliente = c.id_cliente
             LEFT JOIN usuarios u ON t.id_usuario = u.id_usuario
             LEFT JOIN usuarios ua ON t.id_usuario_asignado = ua.id_usuario
+            LEFT JOIN usuarios cliente_user ON cliente_user.id_cliente = t.id_cliente AND cliente_user.id_rol = 5
+            {$creatorJoin}
             WHERE {$where}
             ORDER BY FIELD(t.estatus, 'abierto', 'respondido', 'cerrado'), t.created_at DESC
         ", $params);

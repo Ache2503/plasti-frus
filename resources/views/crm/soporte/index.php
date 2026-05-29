@@ -49,7 +49,7 @@
                     <tr>
                         <th>#</th>
                         <th>Título</th>
-                        <th>Cliente</th>
+                        <th>Cliente / Usuario</th>
                         <th>Prioridad</th>
                         <th>Estatus</th>
                         <th>Asignado</th>
@@ -63,7 +63,18 @@
                     <tr class="<?= $t['estatus'] === 'abierto' ? 'table-warning' : ($t['estatus'] === 'respondido' ? 'table-info' : '') ?>">
                         <td><?= $t['id_ticket'] ?></td>
                         <td><strong><?= safe_string($t['titulo']) ?></strong></td>
-                        <td><?= safe_string($t['cliente_razon'] ?? 'N/A') ?></td>
+                        <td>
+                            <strong><?= safe_string($t['cliente_razon'] ?? 'N/A') ?></strong>
+                            <div class="small text-muted">
+                                Usuario: <?= safe_string($t['usuario_creador'] ?? $t['usuario_cliente'] ?? 'Sin usuario') ?>
+                            </div>
+                            <?php if (!empty($t['cliente_correo']) || !empty($t['cliente_telefono'])): ?>
+                            <div class="small text-muted">
+                                <?= safe_string($t['cliente_correo'] ?? '') ?>
+                                <?= !empty($t['cliente_telefono']) ? ' · ' . safe_string($t['cliente_telefono']) : '' ?>
+                            </div>
+                            <?php endif; ?>
+                        </td>
                         <td>
                             <?php if ($t['prioridad'] === 'urgente'): ?>
                             <span class="badge bg-danger">Urgente</span>

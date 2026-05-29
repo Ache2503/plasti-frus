@@ -16,6 +16,7 @@ class SoporteController extends Controller
     public function index(): void
     {
         $this->requireAuth();
+        requireRolMultiple([1, 3]);
 
         $filters = [
             'estatus' => $this->getParam('estatus', ''),
@@ -39,6 +40,7 @@ class SoporteController extends Controller
     public function show(array $params): void
     {
         $this->requireAuth();
+        requireRolMultiple([1, 3]);
 
         $idTicket = (int) ($params['id'] ?? 0);
         if (!$idTicket) {
@@ -62,6 +64,7 @@ class SoporteController extends Controller
     public function responder(array $params): void
     {
         $this->requireAuth();
+        requireRolMultiple([1, 3]);
 
         if (!verify_csrf($this->postParam('csrf_token'))) {
             set_flash('error', 'Token de seguridad inválido');
@@ -108,6 +111,7 @@ class SoporteController extends Controller
     public function asignar(array $params): void
     {
         $this->requireAuth();
+        requireRolMultiple([1, 3]);
 
         if (!verify_csrf($this->postParam('csrf_token'))) {
             set_flash('error', 'Token de seguridad inválido');
@@ -131,6 +135,7 @@ class SoporteController extends Controller
     public function cerrar(array $params): void
     {
         $this->requireAuth();
+        requireRolMultiple([1, 3]);
 
         if (!verify_csrf($this->postParam('csrf_token'))) {
             set_flash('error', 'Token de seguridad inválido');
@@ -151,6 +156,7 @@ class SoporteController extends Controller
     public function abrir(array $params): void
     {
         $this->requireAuth();
+        requireRolMultiple([1, 3]);
 
         if (!verify_csrf($this->postParam('csrf_token'))) {
             set_flash('error', 'Token de seguridad inválido');

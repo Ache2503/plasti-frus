@@ -77,7 +77,15 @@ class Router
             return;
         }
 
+        if (isset($this->routes[$method][$uri])) {
+            $this->executeAction($this->routes[$method][$uri]);
+            return;
+        }
+
         foreach ($this->routes[$method] as $route => $action) {
+            if (!str_contains($route, '{')) {
+                continue;
+            }
             $pattern = preg_replace('/\{(\w+)\}/', '(?P<$1>[^/]+)', $route);
             $pattern = '#^' . $pattern . '$#';
 

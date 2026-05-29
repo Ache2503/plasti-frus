@@ -42,11 +42,27 @@ class CatalogoController extends Controller
         $sort = in_array($sort, $sortColumns) ? $sort : 'nombre';
         $order = strtolower($order) === 'desc' ? 'DESC' : 'ASC';
 
-        $total = (int) $db->fetchOne("SELECT COUNT(*) as c FROM productos {$where}", $params)['c'];
+        $groupExpr = "COALESCE(NULLIF(TRIM(codigo), ''), CONCAT('ID-', id_producto))";
+        $total = (int) $db->fetchOne("
+            SELECT COUNT(*) as c
+            FROM (
+                SELECT MIN(id_producto)
+                FROM productos {$where}
+                GROUP BY {$groupExpr}
+            ) productos_unicos
+        ", $params)['c'];
         $totalPages = max(1, ceil($total / $perPage));
 
         $productos = $db->fetchAll(
-            "SELECT * FROM productos {$where} ORDER BY {$sort} {$order} LIMIT {$perPage} OFFSET {$offset}",
+            "SELECT p.*
+             FROM productos p
+             INNER JOIN (
+                SELECT MIN(id_producto) as id_producto
+                FROM productos {$where}
+                GROUP BY {$groupExpr}
+             ) productos_unicos ON productos_unicos.id_producto = p.id_producto
+             ORDER BY p.{$sort} {$order}
+             LIMIT {$perPage} OFFSET {$offset}",
             $params
         );
 

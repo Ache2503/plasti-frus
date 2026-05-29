@@ -16,7 +16,7 @@
     <div class="tab-pane fade show active" id="inbox">
         <div class="list-group">
             <?php foreach ($inbox as $m): ?>
-            <div class="list-group-item list-group-item-action <?= !$m['leido'] ? 'fw-bold' : '' ?>" style="cursor:pointer;" onclick="verMensaje(<?= $m['id_mensaje'] ?>, '<?= safe_string($m['remitente_nombre'] ?? $m['remitente_usuario']) ?>', '<?= safe_string($m['asunto']) ?>', '<?= safe_string(str_replace("'", "\'", $m['mensaje'])) ?>')">
+            <div class="list-group-item list-group-item-action <?= !$m['leido'] ? 'fw-bold' : '' ?>" style="cursor:pointer;" onclick='verMensaje(<?= (int) $m['id_mensaje'] ?>, <?= json_encode($m['remitente_nombre'] ?? $m['remitente_usuario'], JSON_HEX_APOS | JSON_HEX_QUOT) ?>, <?= json_encode($m['asunto'], JSON_HEX_APOS | JSON_HEX_QUOT) ?>, <?= json_encode($m['mensaje'], JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
                 <div class="d-flex justify-content-between">
                     <small class="text-muted"><?= safe_string($m['remitente_nombre'] ?? $m['remitente_usuario']) ?></small>
                     <small class="text-muted"><?= format_date($m['created_at']) ?></small>
@@ -64,12 +64,8 @@
                         <label class="form-label">Destinatario</label>
                         <select name="para_user_id" class="form-select form-select-sm" required>
                             <option value="">Seleccionar...</option>
-                            <?php
-                            $db = \App\Core\Database::getInstance();
-                            $usuarios = $db->fetchAll("SELECT u.id_usuario, u.nombre_usuario, CONCAT(e.nombre, ' ', e.apellido_paterno) as nombre_completo FROM usuarios u LEFT JOIN empleados e ON u.id_empleado = e.id_empleado WHERE u.id_rol IN (1,3,4) AND u.activo = 1 ORDER BY e.nombre");
-                            ?>
                             <?php foreach ($usuarios as $u): ?>
-                            <option value="<?= $u['id_usuario'] ?>"><?= safe_string($u['nombre_completo'] ?? $u['nombre_usuario']) ?></option>
+                            <option value="<?= $u['id_usuario'] ?>"><?= safe_string($u['nombre_completo'] ?? $u['nombre_usuario']) ?><?= !empty($u['rol_nombre']) ? ' - ' . safe_string($u['rol_nombre']) : '' ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
