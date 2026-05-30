@@ -19,7 +19,7 @@
                         <td><?= $i['muestreo_piezas'] ?></td>
                         <td class="text-success"><?= $i['piezas_aprobadas'] ?></td>
                         <td class="text-danger"><?= $i['piezas_rechazadas'] ?></td>
-                        <td><?= safe_string($i['inspector']) ?></td>
+                        <td><?= safe_string($i['inspector_nombre'] ?? $i['inspector'] ?? '') ?></td>
                         <td><span class="badge bg-<?= $i['resultado'] === 'aprobado' ? 'success' : ($i['resultado'] === 'rechazado' ? 'danger' : 'warning') ?>"><?= safe_string($i['resultado']) ?></span></td>
                         <td>
                             <form method="POST" action="<?= url('calidad/inspecciones/delete/' . $i['id_inspeccion']) ?>" style="display:inline">

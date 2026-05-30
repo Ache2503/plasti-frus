@@ -115,8 +115,16 @@ class OrdenesController extends Controller
     public function store(): void
     {
         $this->checkAccess();
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/ordenes/create');
+        }
         $request = new OrdenRequest();
         $validated = $request->validate();
+        if (!$this->validateOrdenRelations($validated['id_producto'], $this->postParam('id_maquina'), $this->postParam('id_molde'), $this->postParam('id_receta'))) {
+            set_flash('error', 'Producto, máquina, molde o receta no válido');
+            $this->redirect('/ordenes/create');
+        }
         $data = array_merge($validated, [
             'id_receta' => $this->postParam('id_receta') ?: null,
             'id_molde' => $this->postParam('id_molde') ?: null,
@@ -127,6 +135,55 @@ class OrdenesController extends Controller
         $id = $this->ordenService->create($data);
         \App\Services\AuditService::log('INSERT', 'Orden', $id, "Orden #{$id} creada");
         set_flash('success', 'Orden de producción creada correctamente');
+        $this->redirect('/ordenes');
+    }
+
+    public function edit(array $params): void
+    {
+        $this->checkAccess();
+        $orden = $this->ordenModel->find($params['id']);
+        if (!$orden) {
+            set_flash('error', 'Orden no encontrada');
+            $this->redirect('/ordenes');
+        }
+        $data = [
+            'orden' => $orden,
+            'productos' => $this->productoModel->all(),
+            'recetas' => $this->recetaModel->all(),
+            'moldes' => $this->moldeModel->all(),
+            'maquinas' => $this->maquinaModel->all(),
+            'pageTitle' => 'Editar Orden de Producción',
+        ];
+        $this->view('ordenes/edit', $data);
+    }
+
+    public function update(array $params): void
+    {
+        $this->checkAccess();
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/ordenes');
+        }
+        if (!$this->ordenModel->find($params['id'])) {
+            set_flash('error', 'Orden no encontrada');
+            $this->redirect('/ordenes');
+        }
+        $request = new OrdenRequest();
+        $validated = $request->validate();
+        if (!$this->validateOrdenRelations($validated['id_producto'], $this->postParam('id_maquina'), $this->postParam('id_molde'), $this->postParam('id_receta'))) {
+            set_flash('error', 'Producto, máquina, molde o receta no válido');
+            $this->redirect('/ordenes/edit/' . $params['id']);
+        }
+        $data = array_merge($validated, [
+            'id_receta' => $this->postParam('id_receta') ?: null,
+            'id_molde' => $this->postParam('id_molde') ?: null,
+            'id_maquina' => $this->postParam('id_maquina') ?: null,
+            'cantidad_real_buenas' => $this->postParam('cantidad_real_buenas') ?: null,
+            'estatus' => $this->postParam('estatus') ?: 'pendiente',
+        ]);
+        $this->ordenModel->update($params['id'], $data);
+        \App\Services\AuditService::log('UPDATE', 'Orden', $params['id'], "Orden #{$params['id']} actualizada");
+        set_flash('success', 'Orden de producción actualizada correctamente');
         $this->redirect('/ordenes');
     }
 
@@ -232,5 +289,22 @@ class OrdenesController extends Controller
             'rol_nombre' => user_rol_nombre(),
         ];
         $this->view('ordenes/mis_ordenes', $data);
+    }
+
+    private function validateOrdenRelations($idProducto, $idMaquina = null, $idMolde = null, $idReceta = null): bool
+    {
+        if (!$this->productoModel->find($idProducto)) {
+            return false;
+        }
+        if ($idMaquina && !$this->maquinaModel->find($idMaquina)) {
+            return false;
+        }
+        if ($idMolde && !$this->moldeModel->find($idMolde)) {
+            return false;
+        }
+        if ($idReceta && !$this->recetaModel->find($idReceta)) {
+            return false;
+        }
+        return true;
     }
 }

@@ -12,10 +12,13 @@ class InspeccionCalidad extends Model
     {
         $sql = "
             SELECT i.*, p.nombre as producto_nombre, p.codigo as producto_codigo,
-                   o.id_orden_cabe, o.cantidad_planificada
+                   o.id_orden_cabe, o.cantidad_planificada,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario, i.inspector) as inspector_nombre
             FROM inspecciones_calidad i
             LEFT JOIN productos p ON i.id_producto = p.id_producto
             LEFT JOIN ordenes_cabecera o ON i.id_orden = o.id_orden_cabe
+            LEFT JOIN usuarios u ON i.id_inspector = u.id_usuario
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
         ";
         $params = [];
         $where = [];
@@ -42,10 +45,13 @@ class InspeccionCalidad extends Model
     {
         return $this->fetchOne("
             SELECT i.*, p.nombre as producto_nombre, p.codigo as producto_codigo,
-                   o.id_orden_cabe, o.cantidad_planificada, o.turno, o.fecha as orden_fecha
+                   o.id_orden_cabe, o.cantidad_planificada, o.turno, o.fecha as orden_fecha,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario, i.inspector) as inspector_nombre
             FROM inspecciones_calidad i
             LEFT JOIN productos p ON i.id_producto = p.id_producto
             LEFT JOIN ordenes_cabecera o ON i.id_orden = o.id_orden_cabe
+            LEFT JOIN usuarios u ON i.id_inspector = u.id_usuario
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
             WHERE i.id_inspeccion = :id
         ", ['id' => $id]);
     }

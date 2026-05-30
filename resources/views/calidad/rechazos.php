@@ -16,8 +16,8 @@
             <td><?= safe_string($r['producto_nombre'] ?? 'N/A') ?></td>
             <td><?= format_date($r['fecha']) ?></td>
             <td class="text-danger"><?= $r['cantidad_rechazada'] ?></td>
-            <td><?= safe_string(truncate($r['motivo_rechazo'] ?? '', 50)) ?></td>
-            <td><?= safe_string($r['inspector']) ?></td>
+            <td><?= safe_string(truncate($r['motivo_rechazo_nombre'] ?? $r['motivo_rechazo'] ?? '', 50)) ?></td>
+            <td><?= safe_string($r['inspector_nombre'] ?? $r['inspector'] ?? '') ?></td>
             <td><span class="badge bg-<?= $r['estatus'] === 'resuelto' ? 'success' : 'warning' ?>"><?= safe_string($r['estatus']) ?></span></td>
             <td>
                 <form method="POST" action="<?= url('calidad/rechazos/delete/' . $r['id_rechazo']) ?>" style="display:inline">

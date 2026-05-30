@@ -4,6 +4,7 @@
 </div>
 <div class="card shadow-sm"><div class="card-body">
 <form method="POST" action="<?= url('mantenimiento/plan/store') ?>">
+    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
     <div class="row">
         <div class="col-md-4 mb-3">
             <label class="form-label">Máquina <span class="text-danger">*</span></label>
@@ -20,10 +21,11 @@
         </div>
         <div class="col-md-3 mb-3">
             <label class="form-label">Tipo <span class="text-danger">*</span></label>
-            <select name="tipo_mantenimiento" class="form-select" required>
-                <option value="preventivo">Preventivo</option>
-                <option value="predictivo">Predictivo</option>
-                <option value="calibración">Calibración</option>
+            <select name="id_tipo_mantenimiento" class="form-select" required>
+                <option value="">Seleccionar</option>
+                <?php foreach ($tipos_mantenimiento as $tipo): ?>
+                <option value="<?= $tipo['id_tipo_mantenimiento'] ?>"><?= safe_string($tipo['nombre']) ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
         <div class="col-md-2 mb-3">

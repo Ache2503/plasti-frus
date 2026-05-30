@@ -4,6 +4,7 @@
 </div>
 <div class="card shadow-sm"><div class="card-body">
 <form method="POST" action="<?= url('calidad/inspecciones/store') ?>">
+    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
     <div class="row">
         <div class="col-md-4 mb-3">
             <label class="form-label">Producto <span class="text-danger">*</span></label>
@@ -29,7 +30,12 @@
         </div>
         <div class="col-md-2 mb-3">
             <label class="form-label">Inspector <span class="text-danger">*</span></label>
-            <input type="text" name="inspector" class="form-control" required>
+            <select name="id_inspector" class="form-select" required>
+                <option value="">Seleccionar</option>
+                <?php foreach ($inspectores as $inspector): ?>
+                <option value="<?= $inspector['id_usuario'] ?>"><?= safe_string($inspector['nombre_completo']) ?><?= !empty($inspector['rol']) ? ' - ' . safe_string($inspector['rol']) : '' ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
     </div>
     <div class="row">

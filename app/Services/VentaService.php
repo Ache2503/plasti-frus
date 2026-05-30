@@ -8,10 +8,12 @@ use App\Core\Database;
 class VentaService
 {
     private Database $db;
+    private ComisionService $comisionService;
 
     public function __construct()
     {
         $this->db = Database::getInstance();
+        $this->comisionService = new ComisionService();
     }
 
     public function getAll(array $filters = []): array
@@ -49,7 +51,7 @@ class VentaService
     public function create(array $data): int
     {
         $idVenta = $this->db->insert('ventas', $data);
-        $this->processCommission($idVenta, $data);
+        $this->comisionService->syncForVenta($idVenta);
         $this->generateTicket($idVenta, $data);
         return $idVenta;
     }
@@ -57,44 +59,13 @@ class VentaService
     public function update(int $id, array $data): void
     {
         $this->db->update('ventas', $data, 'id_venta = :id', ['id' => $id]);
+        $this->comisionService->syncForVenta($id);
     }
 
     public function delete(int $id): void
     {
+        $this->comisionService->deleteByVenta($id);
         $this->db->delete('ventas', 'id_venta = :id', ['id' => $id]);
-    }
-
-    private function processCommission(int $idVenta, array $data): void
-    {
-        $idVendedorComision = $data['id_vendedor'] ?? null;
-        if (!$idVendedorComision && !empty($data['id_cliente'])) {
-            $cliente = $this->db->fetchOne(
-                "SELECT id_vendedor FROM clientes WHERE id_cliente = :id",
-                ['id' => $data['id_cliente']]
-            );
-            $idVendedorComision = $cliente['id_vendedor'] ?? null;
-        }
-
-        if ($idVendedorComision) {
-            $total = (float) $data['cantidad_vendida'] * (float) $data['precio_unitario'];
-            $porcentaje = COMISION_PORCENTAJE;
-            $monto = round($total * $porcentaje / 100, 2);
-
-            $this->db->insert('comisiones_vendedor', [
-                'id_vendedor' => $idVendedorComision,
-                'id_venta' => $idVenta,
-                'monto_comision' => $monto,
-                'porcentaje_comision' => $porcentaje,
-                'estatus' => 'pendiente',
-                'fecha_calculo' => date('Y-m-d'),
-            ]);
-
-            notificar_vendedor($idVendedorComision, 'comision_calculada',
-                'Comisión calculada',
-                "Comisión de \${$monto} ({$porcentaje}%) generada por venta #{$idVenta}",
-                $idVenta
-            );
-        }
     }
 
     private function generateTicket(int $idVenta, array $data): void

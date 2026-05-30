@@ -15,6 +15,7 @@ class DatabaseSeeder
     protected function register(): void
     {
         $this->seeders = [
+            CatalogSeeder::class,
             UserSeeder::class,
             ClientSeeder::class,
             ProviderSeeder::class,

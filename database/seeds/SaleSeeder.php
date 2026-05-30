@@ -5,6 +5,7 @@ class SaleSeeder extends Seeder
 {
     public function run(): void
     {
+        $comisiones = new \App\Services\ComisionService();
         $clientes = $this->db->fetchAll("SELECT id_cliente FROM clientes");
         $clienteIds = array_column($clientes, 'id_cliente');
         $productos = $this->db->fetchAll("SELECT id_producto, precio_venta FROM productos WHERE precio_venta IS NOT NULL");
@@ -33,7 +34,7 @@ class SaleSeeder extends Seeder
             $moneda = $monedas[array_rand($monedas)];
             $estatus = $estatuses[array_rand($estatuses)];
 
-            $this->insert('ventas', [
+            $idVenta = $this->insert('ventas', [
                 'id_cliente' => $clienteId,
                 'id_vendedor' => $vendedorId,
                 'id_pedido' => null,
@@ -46,6 +47,7 @@ class SaleSeeder extends Seeder
                 'estatus' => $estatus,
                 'estado' => $estatus,
             ]);
+            $comisiones->syncForVenta($idVenta);
         }
     }
 }

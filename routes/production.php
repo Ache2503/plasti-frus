@@ -24,6 +24,8 @@ $router->get('/ordenes', 'Production\OrdenesController@index');
 $router->get('/mis-ordenes', 'Production\OrdenesController@misOrdenes');
 $router->get('/ordenes/create', 'Production\OrdenesController@create');
 $router->post('/ordenes/store', 'Production\OrdenesController@store');
+$router->get('/ordenes/edit/{id}', 'Production\OrdenesController@edit');
+$router->post('/ordenes/update/{id}', 'Production\OrdenesController@update');
 $router->get('/ordenes/detalle/{id}', 'Production\OrdenesController@detalle');
 $router->post('/ordenes/completar/{id}', 'Production\OrdenesController@completar');
 $router->post('/ordenes/iniciar/{id}', 'Production\OrdenesController@iniciar');

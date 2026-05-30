@@ -11,9 +11,12 @@ class KardexMaterial extends Model
     public function getWithMaterial(array $filters = [])
     {
         $sql = "
-            SELECT k.*, m.nombre as material_nombre, m.tipo as material_tipo, m.unidad_medida
+            SELECT k.*, m.nombre as material_nombre, m.tipo as material_tipo, m.unidad_medida,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario, k.operador) as operador_nombre
             FROM kardex_materiales k
             LEFT JOIN materiales m ON k.id_material = m.id_material
+            LEFT JOIN usuarios u ON k.id_operador = u.id_usuario
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
         ";
         $params = [];
         $where = [];
@@ -47,9 +50,12 @@ class KardexMaterial extends Model
     public function getByMaterial($idMaterial)
     {
         return $this->fetchAll("
-            SELECT k.*, m.nombre as material_nombre, m.unidad_medida
+            SELECT k.*, m.nombre as material_nombre, m.unidad_medida,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario, k.operador) as operador_nombre
             FROM kardex_materiales k
             LEFT JOIN materiales m ON k.id_material = m.id_material
+            LEFT JOIN usuarios u ON k.id_operador = u.id_usuario
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
             WHERE k.id_material = :id
             ORDER BY k.fecha ASC, k.id_kardex ASC
         ", ['id' => $idMaterial]);

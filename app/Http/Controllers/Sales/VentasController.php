@@ -87,6 +87,12 @@ class VentasController extends Controller
         try {
             $request = new VentaRequest();
             $data = $request->validate();
+            if (!$this->clienteRepository->find($data['id_cliente'])) {
+                throw new \App\Exceptions\ValidationException(['id_cliente' => 'Cliente no válido']);
+            }
+            if (!$this->productoRepository->find($data['id_producto'])) {
+                throw new \App\Exceptions\ValidationException(['id_producto' => 'Producto no válido']);
+            }
             $data['fecha_venta'] = $this->postParam('fecha_venta') ?: date('Y-m-d');
             $data['moneda'] = $this->postParam('moneda') ?: 'MXN';
             $data['condiciones_pago'] = $this->postParam('condiciones_pago');
@@ -132,6 +138,16 @@ class VentasController extends Controller
         try {
             $request = new VentaRequest();
             $data = $request->validate();
+            if (!$this->ventaRepository->find($params['id'])) {
+                set_flash('error', 'Venta no encontrada');
+                $this->redirect('/ventas');
+            }
+            if (!$this->clienteRepository->find($data['id_cliente'])) {
+                throw new \App\Exceptions\ValidationException(['id_cliente' => 'Cliente no válido']);
+            }
+            if (!$this->productoRepository->find($data['id_producto'])) {
+                throw new \App\Exceptions\ValidationException(['id_producto' => 'Producto no válido']);
+            }
             $data['fecha_venta'] = $this->postParam('fecha_venta') ?: date('Y-m-d');
             $data['moneda'] = $this->postParam('moneda') ?: 'MXN';
             $data['condiciones_pago'] = $this->postParam('condiciones_pago');

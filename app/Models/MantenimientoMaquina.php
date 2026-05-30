@@ -11,9 +11,14 @@ class MantenimientoMaquina extends Model
     public function getWithMaquina(array $filters = [])
     {
         $sql = "
-            SELECT m.*, maq.nombre as maquina_nombre, maq.modelo as maquina_modelo
+            SELECT m.*, maq.nombre as maquina_nombre, maq.modelo as maquina_modelo,
+                   COALESCE(tm.nombre, m.tipo_mantenimiento) as tipo_mantenimiento_nombre,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario, m.tecnico_responsable) as tecnico_responsable_nombre
             FROM mantenimientos_maquinas m
             LEFT JOIN maquinas maq ON m.id_maquina = maq.id_maquina
+            LEFT JOIN tipos_mantenimiento tm ON m.id_tipo_mantenimiento = tm.id_tipo_mantenimiento
+            LEFT JOIN usuarios u ON m.id_tecnico_responsable = u.id_usuario
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
         ";
         $params = [];
         $where = [];
@@ -43,9 +48,14 @@ class MantenimientoMaquina extends Model
     public function getPendientes()
     {
         return $this->fetchAll("
-            SELECT m.*, maq.nombre as maquina_nombre
+            SELECT m.*, maq.nombre as maquina_nombre,
+                   COALESCE(tm.nombre, m.tipo_mantenimiento) as tipo_mantenimiento_nombre,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario, m.tecnico_responsable) as tecnico_responsable_nombre
             FROM plan_mantenimiento m
             LEFT JOIN maquinas maq ON m.id_maquina = maq.id_maquina
+            LEFT JOIN tipos_mantenimiento tm ON m.id_tipo_mantenimiento = tm.id_tipo_mantenimiento
+            LEFT JOIN usuarios u ON m.id_tecnico_responsable = u.id_usuario
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
             WHERE m.estatus = 'pendiente' OR m.estatus IS NULL
             ORDER BY m.fecha_programada ASC
         ");

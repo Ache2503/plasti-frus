@@ -383,7 +383,12 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label small">Motivo</label>
-                        <textarea name="motivo_paro" class="form-control form-control-sm" rows="2" required></textarea>
+                        <select name="id_motivo_paro" class="form-select form-select-sm" required>
+                            <option value="">Seleccionar...</option>
+                            <?php foreach (($motivos_paro ?? []) as $motivo): ?>
+                            <option value="<?= $motivo['id_motivo_paro'] ?>"><?= safe_string($motivo['nombre']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="mb-2">
                         <label class="form-label small">Hora Inicio</label>

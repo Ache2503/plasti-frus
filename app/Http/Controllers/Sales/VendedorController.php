@@ -2,15 +2,18 @@
 namespace App\Http\Controllers\Sales;
 
 use App\Core\Controller;
+use App\Services\ComisionService;
 use App\Services\NotificacionService;
 
 class VendedorController extends Controller
 {
     private NotificacionService $notificacionService;
+    private ComisionService $comisionService;
 
     public function __construct()
     {
         $this->notificacionService = new NotificacionService();
+        $this->comisionService = new ComisionService();
     }
 
     public function comisiones(): void
@@ -89,14 +92,15 @@ class VendedorController extends Controller
         $userId = (int) $_SESSION['user_id'];
         $db = \App\Core\Database::getInstance();
         $data = $db->fetchAll("
-            SELECT DATE_FORMAT(v.fecha_venta, '%Y-%m') as mes,
-                   COALESCE(SUM(v.cantidad_vendida * v.precio_unitario), 0) as monto
-            FROM ventas v
-            LEFT JOIN clientes c ON v.id_cliente = c.id_cliente
-            WHERE (v.id_vendedor = :uid OR c.id_vendedor = :uid2)
-              AND v.fecha_venta >= DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH)
+            SELECT DATE_FORMAT(COALESCE(c.fecha_calculo, v.fecha_venta), '%Y-%m') as mes,
+                   COALESCE(SUM(c.monto_comision), 0) as monto
+            FROM comisiones_vendedor c
+            LEFT JOIN ventas v ON c.id_venta = v.id_venta
+            WHERE c.id_vendedor = :uid
+              AND COALESCE(c.fecha_calculo, v.fecha_venta) >= DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH)
+              AND c.estatus IN ('pendiente', 'pagada')
             GROUP BY mes ORDER BY mes ASC
-        ", ['uid' => $userId, 'uid2' => $userId]);
+        ", ['uid' => $userId]);
         $this->json($data);
     }
 
@@ -131,13 +135,11 @@ class VendedorController extends Controller
         }
 
         $idComision = (int) $params['id'];
-        $db = \App\Core\Database::getInstance();
-        $db->update('comisiones_vendedor', [
-            'estatus' => 'pagada',
-            'fecha_pago' => date('Y-m-d'),
-        ], 'id_comision = :id', ['id' => $idComision]);
-
-        $comision = $db->fetchOne("SELECT * FROM comisiones_vendedor WHERE id_comision = :id", ['id' => $idComision]);
+        $comision = $this->comisionService->markAsPaid($idComision);
+        if (!$comision) {
+            set_flash('error', 'Comisión no encontrada o no está pendiente');
+            $this->redirect('/comisiones');
+        }
         if ($comision) {
             $this->notificacionService->vendedorNotify(
                 (int) $comision['id_vendedor'],

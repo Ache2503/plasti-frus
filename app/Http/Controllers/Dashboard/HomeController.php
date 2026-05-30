@@ -6,22 +6,26 @@ use App\Core\Database;
 use App\Services\NotificacionService;
 use App\Repositories\ClienteRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\CatalogRepository;
 
 class HomeController extends Controller
 {
     private Database $db;
     private ClienteRepository $clienteRepository;
     private UserRepository $userRepository;
+    private CatalogRepository $catalogs;
     private NotificacionService $notificacionService;
 
     public function __construct(
         ?ClienteRepository $clienteRepository = null,
         ?UserRepository $userRepository = null,
-        ?NotificacionService $notificacionService = null
+        ?NotificacionService $notificacionService = null,
+        ?CatalogRepository $catalogs = null
     ) {
         $this->db = Database::getInstance();
         $this->clienteRepository = $clienteRepository ?? new ClienteRepository();
         $this->userRepository = $userRepository ?? new UserRepository();
+        $this->catalogs = $catalogs ?? new CatalogRepository();
         $this->notificacionService = $notificacionService ?? new NotificacionService();
     }
 
@@ -379,6 +383,7 @@ class HomeController extends Controller
             'ordenes_hoy' => $ordenes_hoy,
             'ordenes_mi_turno' => $ordenes_con_avance,
             'maquinas_activas' => $maquinas_activas,
+            'motivos_paro' => $this->catalogs->motivosParo(),
             'maquinas_con_estado' => $maquinas_con_estado,
             'incidencias_hoy' => $incidencias_hoy,
             'paros_activos' => $paros_activos,
@@ -978,24 +983,43 @@ class HomeController extends Controller
             set_flash('error', 'Token de seguridad inválido');
             $this->redirect('/');
         }
+        $maquina = $this->db->fetchOne("SELECT id_maquina FROM maquinas WHERE id_maquina = :id", [
+            'id' => $this->input('id_maquina'),
+        ]);
+        if (!$maquina) {
+            set_flash('error', 'Máquina no válida');
+            $this->redirect('/');
+        }
+        $motivo = $this->catalogs->findMotivoParo((int) $this->input('id_motivo_paro'));
+        if (!$motivo) {
+            set_flash('error', 'Motivo de paro no válido');
+            $this->redirect('/');
+        }
         $horaInicio = $this->input('hora_inicio') ?: date('H:i');
-        $this->db->insert('bitacora_paros', [
+        $data = [
             'id_maquina' => $this->input('id_maquina'),
             'fecha' => date('Y-m-d'),
             'hora_inicio' => $horaInicio,
             'hora_fin' => null,
             'duracion_paro' => 0,
-            'motivo_paro' => $this->input('motivo_paro'),
-            'operador' => (string) ($_SESSION['user_id'] ?? ''),
+            'motivo_paro' => $motivo['nombre'],
+            'operador' => user_nombre_completo() ?: (string) ($_SESSION['user_id'] ?? ''),
             'estatus' => 'activo',
-        ]);
-        registrar_log('reportar_paro', 'maquina', $this->input('id_maquina'), $this->input('motivo_paro'));
+        ];
+        if ($this->db->columnExists('bitacora_paros', 'id_motivo_paro')) {
+            $data['id_motivo_paro'] = $motivo['id_motivo_paro'];
+        }
+        if ($this->db->columnExists('bitacora_paros', 'id_operador')) {
+            $data['id_operador'] = (int) ($_SESSION['user_id'] ?? 0);
+        }
+        $this->db->insert('bitacora_paros', $data);
+        registrar_log('reportar_paro', 'maquina', $this->input('id_maquina'), $motivo['nombre']);
 
         $operadores = $this->userRepository->findByRol(2);
         foreach ($operadores as $op) {
             $this->notificacionService->operadorNotify(
                 (int) $op['id_usuario'], 'paro', 'Paro reportado',
-                "Máquina #{$this->input('id_maquina')}: {$this->input('motivo_paro')}",
+                "Máquina #{$this->input('id_maquina')}: {$motivo['nombre']}",
                 (int) $this->input('id_maquina')
             );
         }
@@ -1004,7 +1028,7 @@ class HomeController extends Controller
         foreach ($supervisores as $sup) {
             $this->notificacionService->supervisorNotify(
                 (int) $sup['id_usuario'], 'paro', 'Paro reportado',
-                "Máquina #{$this->input('id_maquina')}: {$this->input('motivo_paro')}",
+                "Máquina #{$this->input('id_maquina')}: {$motivo['nombre']}",
                 (int) $this->input('id_maquina')
             );
         }

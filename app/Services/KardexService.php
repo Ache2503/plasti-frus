@@ -15,9 +15,12 @@ class KardexService
     public function getAll(): array
     {
         return $this->db->fetchAll("
-            SELECT k.*, m.nombre as material_nombre
+            SELECT k.*, m.nombre as material_nombre, m.unidad_medida,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario, k.operador) as operador_nombre
             FROM kardex_materiales k
             LEFT JOIN materiales m ON k.id_material = m.id_material
+            LEFT JOIN usuarios u ON k.id_operador = u.id_usuario
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
             ORDER BY k.id_kardex DESC
         ");
     }
@@ -25,7 +28,14 @@ class KardexService
     public function getByMaterial(int $idMaterial): array
     {
         return $this->db->fetchAll("
-            SELECT * FROM kardex_materiales WHERE id_material = :id ORDER BY created_at ASC
+            SELECT k.*, m.nombre as material_nombre, m.unidad_medida,
+                   COALESCE(NULLIF(TRIM(CONCAT(e.nombre, ' ', e.apellido_paterno)), ''), u.nombre_usuario, k.operador) as operador_nombre
+            FROM kardex_materiales k
+            LEFT JOIN materiales m ON k.id_material = m.id_material
+            LEFT JOIN usuarios u ON k.id_operador = u.id_usuario
+            LEFT JOIN empleados e ON u.id_empleado = e.id_empleado
+            WHERE k.id_material = :id
+            ORDER BY k.created_at ASC, k.id_kardex ASC
         ", ['id' => $idMaterial]);
     }
 

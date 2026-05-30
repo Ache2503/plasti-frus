@@ -68,7 +68,12 @@
                     </div>
                     <div class="mb-2" id="motivoRechazoGroup" style="display:none;">
                         <label class="form-label small">Motivo de Rechazo</label>
-                        <textarea name="motivo_rechazo" class="form-control form-control-sm" rows="2"></textarea>
+                        <select name="id_motivo_rechazo" class="form-select form-select-sm">
+                            <option value="">Seleccionar...</option>
+                            <?php foreach (($motivos_rechazo ?? []) as $motivo): ?>
+                            <option value="<?= $motivo['id_motivo_rechazo'] ?>"><?= safe_string($motivo['nombre']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer p-1">

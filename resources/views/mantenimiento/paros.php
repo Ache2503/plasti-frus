@@ -18,9 +18,10 @@
             <td><?= $p['hora_inicio'] ? substr($p['hora_inicio'], 0, 5) : '-' ?></td>
             <td><?= $p['hora_fin'] ? substr($p['hora_fin'], 0, 5) : '-' ?></td>
             <td><?= number_format($p['duracion_paro'], 1) ?></td>
-            <td><?= safe_string(truncate($p['motivo_paro'] ?? '', 50)) ?></td>
+            <td><?= safe_string(truncate($p['motivo_paro_nombre'] ?? $p['motivo_paro'] ?? '', 50)) ?></td>
             <td><span class="badge bg-<?= $p['estatus'] === 'resuelto' ? 'success' : 'danger' ?>"><?= safe_string($p['estatus']) ?></span></td>
             <td>
+                <a href="<?= url('mantenimiento/paros/edit/' . $p['id_bitacora']) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
                 <form method="POST" action="<?= url('mantenimiento/paros/delete/' . $p['id_bitacora']) ?>" style="display:inline">
                     <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                     <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar?')"><i class="bi bi-trash"></i></button>

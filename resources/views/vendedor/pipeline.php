@@ -11,6 +11,18 @@
     <div class="col-12">
         <form method="GET" class="row g-1 align-items-end">
             <div class="col-auto">
+                <?php if (!es_vendedor()): ?>
+                <select name="vendedor" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Todos los vendedores</option>
+                    <?php foreach ($vendedores as $v): ?>
+                    <option value="<?= $v['id_usuario'] ?>" <?= (string) ($filtro_vendedor ?? '') === (string) $v['id_usuario'] ? 'selected' : '' ?>>
+                        <?= safe_string(trim(($v['nombre'] ?? '') . ' ' . ($v['apellido_paterno'] ?? '')) ?: $v['nombre_usuario']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+                <?php endif; ?>
+            </div>
+            <div class="col-auto">
                 <select name="etapa" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">Todas las etapas</option>
                     <?php foreach ($etapas as $k => $v): ?>
@@ -98,15 +110,22 @@
                         <label class="form-label">Cliente</label>
                         <select name="id_cliente" id="opp_cliente" class="form-select form-select-sm">
                             <option value="">Sin cliente</option>
-                            <?php
-                            $db = \App\Core\Database::getInstance();
-                            $clientes = $db->fetchAll("SELECT id_cliente, razon_social FROM clientes WHERE id_vendedor = :uid AND activo = 1 ORDER BY razon_social", ['uid' => $_SESSION['user_id']]);
-                            ?>
                             <?php foreach ($clientes as $c): ?>
-                            <option value="<?= $c['id_cliente'] ?>"><?= safe_string($c['razon_social']) ?></option>
+                            <option value="<?= $c['id_cliente'] ?>" data-vendedor="<?= safe_string($c['id_vendedor'] ?? '') ?>"><?= safe_string($c['razon_social']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php if (!es_vendedor()): ?>
+                    <div class="mb-2">
+                        <label class="form-label">Vendedor</label>
+                        <select name="id_vendedor" id="opp_vendedor" class="form-select form-select-sm" required>
+                            <option value="">Seleccionar vendedor</option>
+                            <?php foreach ($vendedores as $v): ?>
+                            <option value="<?= $v['id_usuario'] ?>"><?= safe_string(trim(($v['nombre'] ?? '') . ' ' . ($v['apellido_paterno'] ?? '')) ?: $v['nombre_usuario']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
                     <div class="row mb-2">
                         <div class="col-6">
                             <label class="form-label">Valor</label>
@@ -158,7 +177,7 @@ document.querySelectorAll('.kanban-column').forEach(col => {
             const formData = new FormData();
             formData.append('csrf_token', '<?= csrf_token() ?>');
             formData.append('etapa', nuevaEtapa);
-            fetch('<?= url('pipeline/etapa') ?>/' + id, { method: 'POST', body: formData })
+            fetch('<?= url('pipeline/etapa') ?>/' + id, { method: 'POST', body: formData, headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(r => r.json())
                 .then(d => { if (!d.success) location.reload(); });
         }
@@ -170,6 +189,9 @@ function abrirModal(etapa) {
     document.getElementById('id_oportunidad').value = '';
     document.getElementById('opp_titulo').value = '';
     document.getElementById('opp_cliente').value = '';
+    if (document.getElementById('opp_vendedor')) {
+        document.getElementById('opp_vendedor').value = '<?= safe_string($filtro_vendedor ?? '') ?>';
+    }
     document.getElementById('opp_valor').value = '';
     document.getElementById('opp_probabilidad').value = '';
     document.getElementById('opp_etapa').value = etapa || 'prospeccion';
@@ -181,7 +203,7 @@ function abrirModal(etapa) {
 }
 
 function editarOportunidad(id) {
-    fetch('<?= url('pipeline/data') ?>')
+    fetch('<?= url('pipeline/data' . (!empty($filtro_vendedor) ? '?vendedor=' . urlencode((string) $filtro_vendedor) : '')) ?>', { headers: { 'Accept': 'application/json' } })
         .then(r => r.json())
         .then(data => {
             const opp = data.find(o => o.id_oportunidad == id);
@@ -190,6 +212,9 @@ function editarOportunidad(id) {
             document.getElementById('id_oportunidad').value = opp.id_oportunidad;
             document.getElementById('opp_titulo').value = opp.titulo;
             document.getElementById('opp_cliente').value = opp.id_cliente || '';
+            if (document.getElementById('opp_vendedor')) {
+                document.getElementById('opp_vendedor').value = opp.id_vendedor || '';
+            }
             document.getElementById('opp_valor').value = opp.valor;
             document.getElementById('opp_probabilidad').value = opp.probabilidad;
             document.getElementById('opp_etapa').value = opp.etapa;
@@ -206,7 +231,7 @@ function eliminarOportunidad() {
     const id = document.getElementById('id_oportunidad').value;
     const formData = new FormData();
     formData.append('csrf_token', '<?= csrf_token() ?>');
-    fetch('<?= url('pipeline/delete') ?>/' + id, { method: 'POST', body: formData })
+    fetch('<?= url('pipeline/delete') ?>/' + id, { method: 'POST', body: formData, headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
         .then(r => r.json())
         .then(d => { if (d.success) location.reload(); });
 }

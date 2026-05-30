@@ -52,6 +52,10 @@ class KardexController extends Controller
     public function store(): void
     {
         $this->requireRol(3);
+        if (!verify_csrf($this->postParam('csrf_token'))) {
+            set_flash('error', 'Token de seguridad inválido');
+            $this->redirect('/kardex/create');
+        }
         $idMaterial = $this->postParam('id_material');
 
         $mat = $this->materialRepository->find($idMaterial);

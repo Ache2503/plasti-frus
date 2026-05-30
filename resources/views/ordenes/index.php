@@ -99,6 +99,7 @@ include __DIR__ . '/../partials/filter_bar.php';
                         <td><?= safe_string($o['turno']) ?></td>
                         <td>
                             <a href="<?= url('ordenes/detalle/' . $o['id_orden_cabe']) ?>" class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i></a>
+                            <a href="<?= url('ordenes/edit/' . $o['id_orden_cabe']) ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
                             <form method="POST" action="<?= url('ordenes/delete/' . $o['id_orden_cabe']) ?>" style="display:inline">
                                 <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar orden?')"><i class="bi bi-trash"></i></button>

@@ -43,7 +43,7 @@ include __DIR__ . '/../partials/filter_bar.php';
             <td><span class="badge bg-<?= $k['movimiento'] === 'entrada' ? 'success' : 'danger' ?>"><?= safe_string($k['movimiento']) ?></span></td>
             <td><?= number_format($k['cantidad'], 2) ?> <?= safe_string($k['unidad_medida'] ?? 'kg') ?></td>
             <td><?= number_format($k['stock_final'], 2) ?></td>
-            <td><?= safe_string($k['operador']) ?></td>
+            <td><?= safe_string($k['operador_nombre'] ?? $k['operador']) ?></td>
         </tr>
         <?php endforeach; ?>
         <?php if (empty($movimientos)): ?>
