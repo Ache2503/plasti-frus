@@ -1,6 +1,6 @@
-# Plasti Frus — Sistema de Gestión para Fábrica de Plásticos
+# Plasti Frus — Sistema ERP/MRP para Fábrica de Plásticos
 
-**Plasti Frus** es un sistema ERP web desarrollado en PHP nativo con arquitectura MVC para la gestión integral de una fábrica de inyección de plásticos. Cubre producción, calidad, ventas, CRM, inventarios, contabilidad, mantenimiento, KPIs, portal de cliente, y más — todo en un solo sistema modular basado en roles.
+**Plasti Frus** es un sistema ERP/MRP web completo desarrollado en PHP 8.3 con arquitectura MVC propia para la gestión integral de una fábrica de inyección de plásticos. Integra **producción, calidad, ventas, CRM, inventarios, contabilidad, mantenimiento, recursos humanos, trazabilidad, KPIs, y portal de cliente** — todo modular, basado en 6 roles, con 130+ tablas normalizadas en MySQL y 63 tests automatizados.
 
 ---
 
@@ -9,12 +9,14 @@
 | Componente | Tecnología |
 |---|---|
 | **Backend** | PHP 8.3 — MVC propio (Router → Controller → Service → Model → View) |
-| **Base de datos** | MySQL / MariaDB — 140+ tablas normalizadas |
-| **Frontend** | Bootstrap 5.3, DataTables 1.13, Chart.js 4, Bootstrap Icons |
-| **Testing** | PHPUnit 11 — 63 tests funcionales (127 assertions) |
-| **Dependencias** | Composer — PHPMailer, Dompdf, PhpSpreadsheet, vlucas/phpdotenv |
-| **ORM** | Active Record simple con PDO parametrizado (sin inyección SQL) |
-| **Autenticación** | Sesiones PHP + bcrypt + recuperación de contraseña por email |
+| **Base de datos** | MySQL 8.0 / MariaDB 11.4 — 130+ tablas normalizadas (3NF, InnoDB) |
+| **Frontend** | Bootstrap 5.3, DataTables 1.13, Chart.js 4, Bootstrap Icons, HTML5 Canvas |
+| **Testing** | PHPUnit 11 — 63 tests funcionales + unitarios (127 assertions) |
+| **Dependencias principales** | PHPMailer 7.1, Dompdf 3.1, PhpSpreadsheet 5.7, vlucas/phpdotenv 5.5 |
+| **ORM** | Active Record propio con PDO parametrizado (sin inyección SQL) |
+| **Autenticación** | Sesiones PHP + bcrypt (password_hash) + recuperación de contraseña por email |
+| **Autorización** | 6 roles (Admin, Operador, Supervisor, Vendedor, Cliente, Contador) con permisos por acción |
+| **Entorno** | Docker Compose (PHP 8.3-Apache + MariaDB 11.4 + PhpMyAdmin) o instalación local |
 
 ---
 
